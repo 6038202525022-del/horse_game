@@ -145,6 +145,7 @@
                     <p>・マナーを守り、白熱した2人対戦をお楽しみください！</p>
                 </div>
 
+                <!-- ステップ1: 1Pの名前とパスワードを入力 -->
                 <form id="login-form" onsubmit="window.game.submitLogin(event)" class="flex flex-col gap-3 text-left">
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">1P プレイヤー名</label>
@@ -167,7 +168,31 @@
                     <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center"></div>
 
                     <button type="submit" class="btn-arcade bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 rounded-lg text-sm shadow-lg mt-1 border-b-2 border-amber-800">
-                        同意してゲームを開始 🏇
+                        次へ（2Pプレイヤー名設定へ） 🏇
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ステップ2: 2Pの名前入力モーダル -->
+        <div id="p2-name-modal" class="hidden absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-slate-900 border-2 border-cyan-500 rounded-2xl p-5 max-w-md w-full text-center shadow-2xl flex flex-col gap-3">
+                <div class="text-lg font-black text-cyan-400 flex items-center justify-center gap-2">
+                    <span>🟦</span> 2P プレイヤー設定 <span>🏇</span>
+                </div>
+                
+                <p class="text-xs text-slate-300">2Pプレイヤーのお名前を入力してください。</p>
+
+                <form id="p2-name-form" onsubmit="window.game.submit2PName(event)" class="flex flex-col gap-3 text-left">
+                    <div>
+                        <label class="block text-xs font-bold text-cyan-300 mb-1">2P プレイヤー名</label>
+                        <input type="text" id="input-p2-username" required placeholder="例: アスパラガス" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                    </div>
+
+                    <div id="p2-name-error" class="hidden text-red-400 text-xs font-bold text-center"></div>
+
+                    <button type="submit" class="btn-arcade bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-black py-2.5 rounded-lg text-sm shadow-lg mt-1 border-b-2 border-cyan-800">
+                        ゲームを開始する 🏇
                     </button>
                 </form>
             </div>
@@ -191,15 +216,15 @@
                     <span class="text-xs font-bold text-amber-400">【借入オプション（高利貸し）】</span>
                     <button onclick="window.game.borrowLoan(10)" class="btn-arcade bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
                         <span>🪙 10枚借りる</span>
-                        <span class="text-[10px] bg-slate-950/40 text-amber-200 px-1.5 py-0.5 rounded">返済: 11枚 (利子3%)</span>
+                        <span class="text-[10px] bg-slate-950/40 text-amber-200 px-1.5 py-0.5 rounded">返済: 15枚 (利子50%)</span>
                     </button>
                     <button onclick="window.game.borrowLoan(50)" class="btn-arcade bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-slate-950 font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
                         <span>🪙 50枚借りる</span>
-                        <span class="text-[10px] bg-slate-950/40 text-orange-200 px-1.5 py-0.5 rounded">返済: 52枚 (利子4%)</span>
+                        <span class="text-[10px] bg-slate-950/40 text-orange-200 px-1.5 py-0.5 rounded">返済: 80枚 (利子60%)</span>
                     </button>
                     <button onclick="window.game.borrowLoan(100)" class="btn-arcade bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
                         <span>🪙 100枚借りる</span>
-                        <span class="text-[10px] bg-slate-950/40 text-red-200 px-1.5 py-0.5 rounded">返済: 106枚 (利子6%)</span>
+                        <span class="text-[10px] bg-slate-950/40 text-red-200 px-1.5 py-0.5 rounded">返済: 180枚 (利子80%)</span>
                     </button>
                 </div>
 
@@ -247,11 +272,11 @@
 
         <div class="flex justify-between items-center">
             <div class="flex items-center gap-1.5">
-                <span class="text-base">🟥</span>
-                <span id="p1-display-name" class="font-black text-xs text-rose-400 truncate max-w-[120px]">1P PLAYER</span>
-                <div class="bg-slate-950 px-1.5 py-0.5 rounded border border-rose-800 flex items-center gap-1 text-[11px]">
+                <span class="text-base">🟦</span>
+                <span id="p2-display-name" class="font-black text-xs text-cyan-400 truncate max-w-[120px]">2P PLAYER</span>
+                <div class="bg-slate-950 px-1.5 py-0.5 rounded border border-cyan-800 flex items-center gap-1 text-[11px]">
                     <span class="text-yellow-400">🪙</span>
-                    <span id="p1-medals" class="font-bold text-yellow-400">100</span>枚
+                    <span id="p2-medals" class="font-bold text-yellow-400">100</span>枚
                 </div>
             </div>
 
@@ -331,10 +356,10 @@
     <script>
     // 馬のデータ定義定数
     const HORSE_NAME_POOL = [
-        "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
-        "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー","タッカルビカンタ","ナリタブライアン",
-        "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ",
-        "アーモンドアイ", "ウオッカ","サルトシッソク","ヒヨシメガネ","サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
+        "サンダーボルト", "ディープスター", "ゴールドシップ", "キセキノハナ",
+        "サイレンスウインド", "キングカメハメ", "メジロクイーン", "トウカイテイオー",
+        "スペシャルウィーク", "オグリキャップ", "シンボリルドルフ", "オルフェーヴル",
+        "アーモンドアイ", "ウオッカ", "ダイワスカーレット", "ライスシャワー"
     ];
 
     const HORSE_TYPES = [
@@ -408,7 +433,7 @@
 
             if (!valName || valPass.length < 6) {
                 if (loginError) {
-                    loginError.textContent = "名前と6桁の数字パスワードを入力してください。";
+                    loginError.textContent = "1Pの名前と6桁の数字パスワードを入力してください。";
                     loginError.classList.remove('hidden');
                 }
                 return;
@@ -424,7 +449,7 @@
             }
 
             this.username = valName;
-            this.p1.name = valName; // 1Pの名前を設定
+            this.p1.name = valName; // 1Pの名前を代入
             
             // 画面上の1P名表示を更新
             const p1NameLabel = document.getElementById('p1-display-name');
@@ -438,9 +463,48 @@
                 centerP1Label.textContent = `🏆 ${valName}`;
             }
 
-            // 入力画面を閉じてベット画面へ移行
-            const modal = document.getElementById('login-modal');
-            if (modal) modal.classList.add('hidden');
+            // 第1ステップの入力画面を閉じ、2P名前入力モーダルを開く
+            const loginModal = document.getElementById('login-modal');
+            if (loginModal) loginModal.classList.add('hidden');
+
+            const p2Modal = document.getElementById('p2-name-modal');
+            if (p2Modal) p2Modal.classList.remove('hidden');
+
+            playSound('coin');
+        }
+
+        submit2PName(e) {
+            e.preventDefault();
+            const p2UsernameInput = document.getElementById('input-p2-username');
+            const p2NameError = document.getElementById('p2-name-error');
+
+            const valP2Name = p2UsernameInput ? p2UsernameInput.value.trim() : '';
+
+            if (!valP2Name) {
+                if (p2NameError) {
+                    p2NameError.textContent = "2Pのお名前を入力してください。";
+                    p2NameError.classList.remove('hidden');
+                }
+                return;
+            }
+
+            this.p2.name = valP2Name; // 2Pの名前を代入
+
+            // 画面上の2P名表示を更新
+            const p2NameLabel = document.getElementById('p2-display-name');
+            if (p2NameLabel) {
+                p2NameLabel.textContent = valP2Name;
+            }
+
+            // 中央帯の2Pラベルも更新
+            const centerP2Label = document.querySelector('#center-race-history-banner .text-cyan-400');
+            if (centerP2Label) {
+                centerP2Label.textContent = `🏆 ${valP2Name}`;
+            }
+
+            // 2Pモーダルを閉じてベット画面へ移行
+            const p2Modal = document.getElementById('p2-name-modal');
+            if (p2Modal) p2Modal.classList.add('hidden');
 
             playSound('coin');
             this.state = "BETTING";
@@ -881,8 +945,12 @@
             const p1Label = document.getElementById('p1-medals');
             const p2Label = document.getElementById('p2-medals');
 
-            p1Label.textContent = this.p1.medals + (this.p1.debt > 0 ? ` (借:${this.p1.debt})` : '');
-            p2Label.textContent = this.p2.medals + (this.p2.debt > 0 ? ` (借:${this.p2.debt})` : '');
+            if (p1Label) {
+                p1Label.textContent = this.p1.medals + (this.p1.debt > 0 ? ` (借:${this.p1.debt})` : '');
+            }
+            if (p2Label) {
+                p2Label.textContent = this.p2.medals + (this.p2.debt > 0 ? ` (借:${this.p2.debt})` : '');
+            }
 
             // ★ 中央帯：馬の直近5戦（優勝・2位）履歴の表示更新（左側から1レース目、2レース目...の順に表示）
             const renderRaceHistory = (elementId) => {
@@ -942,7 +1010,7 @@
                 }
             }
 
-            const pTag = player === this.p1 ? (this.p1.name || "1P") : "2P";
+            const pTag = (player.name && player.name.trim() !== "") ? player.name : (player === this.p1 ? "1P" : "2P");
             container.innerHTML = total > 0 ? html : `<span class="text-slate-400 text-[11px]">${pTag}: 馬を選択してベット</span>`;
         };
 
@@ -1005,9 +1073,9 @@
             if (!this.bankruptPlayer) return;
 
             // それぞれ利子が 50%, 60%, 80%
-            let interestRate = 0.03;
-            if (amount === 50) interestRate = 0.04;
-            if (amount === 100) interestRate = 0.06;
+            let interestRate = 0.5;
+            if (amount === 50) interestRate = 0.6;
+            if (amount === 100) interestRate = 0.8;
 
             const repayment = Math.floor(amount * (1 + interestRate));
 
@@ -1809,7 +1877,7 @@
             };
 
             // 2P (上側・反転表示用)
-            drawPlayerPayoutSummary("2P", this.p2BetMedalsThisRace, this.p2WonMedalsThisRace, '#38bdf8', true, w * 0.28, 210);
+            drawPlayerPayoutSummary(this.p2.name || "2P", this.p2BetMedalsThisRace, this.p2WonMedalsThisRace, '#38bdf8', true, w * 0.28, 210);
             // 1P (下側・正位表示)
             drawPlayerPayoutSummary(this.p1.name || "1P", this.p1BetMedalsThisRace, this.p1WonMedalsThisRace, '#f43f5e', false, w * 0.72, h - 55);
 
