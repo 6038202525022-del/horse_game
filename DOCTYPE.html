@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horse Racing Arcade - 2 Player Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            touch-action: manipulation;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-arcade {
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 0 0 rgba(0,0,0,0.4);
+        }
+        .btn-arcade:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 0 rgba(0,0,0,0.4);
+        }
+
+        .bet-chip {
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid #38bdf8;
+            border-radius: 20px;
+            padding: 1px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .bet-chip .count {
+            background: #eab308;
+            color: #0f172a;
+            border-radius: 10px;
+            padding: 0 5px;
+        }
+
+        .player-2p-area {
+            transform: rotate(180deg);
+        }
+
+        @keyframes commentary-pop {
+            0% { transform: scale(0.9); opacity: 0; }
+            15% { transform: scale(1.05); opacity: 1; }
+            30% { transform: scale(1); opacity: 1; }
+            100% { opacity: 1; }
+        }
+
+        .animate-commentary {
+            animation: commentary-pop 0.3s ease-out forwards;
+        }
+
+        /* 倒産ハンコ用のアニメーション */
+        @keyframes stamp-bounce {
+            0% { transform: scale(3) rotate(-12deg); opacity: 0; }
+            50% { transform: scale(0.95) rotate(-12deg); opacity: 1; }
+            70% { transform: scale(1.05) rotate(-12deg); }
+            100% { transform: scale(1) rotate(-12deg); opacity: 0.9; }
+        }
+
+        .stamp-effect {
+            animation: stamp-bounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            border: 6px double #dc2626;
+            color: #dc2626;
+            text-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+            box-shadow: inset 0 0 15px rgba(220, 38, 38, 0.3), 0 0 20px rgba(220, 38, 38, 0.4);
+            background: rgba(15, 23, 42, 0.85);
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 8px;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 h-screen w-screen flex flex-col justify-between p-2">
+
+    <!-- 2P Control Panel (TOP - Rotated for 2 Player Face-to-Face) -->
+    <header class="w-full max-w-5xl mx-auto bg-slate-900 p-2 rounded-xl border-2 border-cyan-500/50 shadow-md player-2p-area flex flex-col gap-1.5">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🟦</span>
+                <span class="font-black text-sm text-cyan-400">2P PLAYER</span>
+                <div class="bg-slate-950 px-2 py-1 rounded border border-cyan-800 flex items-center gap-1 text-xs">
+                    <span class="text-yellow-400">🪙</span>
+                    <span id="p2-medals" class="font-bold text-yellow-400">100</span>枚
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1">
+                <button id="p2-tab-single" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-cyan-600 text-white">単勝</button>
+                <button id="p2-tab-exacta" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300">馬連</button>
+                <button id="p2-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-2 py-1 rounded text-xs">単位: 1枚</button>
+            </div>
+
+            <button id="btn-start-race-p2" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-1.5 rounded-lg text-xs border-b-2 border-emerald-800">
+                スタート！ 🏇
+            </button>
+        </div>
+
+        <!-- 2P Active Selection & Summary / Carrot Bar -->
+        <div id="p2-bet-bar" class="bg-slate-950/80 p-1.5 rounded border border-cyan-900 min-h-[32px] flex items-center justify-between text-xs overflow-x-auto">
+            <div id="p2-bets-summary" class="flex items-center gap-1 text-slate-400 text-[11px]">2P: 馬を選択してベット</div>
+            <div id="p2-racing-carrots" class="hidden flex gap-1"></div>
+        </div>
+    </header>
+
+    <!-- Center Canvas Area -->
+    <main class="w-full max-w-5xl mx-auto flex-1 my-1 relative bg-slate-900 rounded-xl overflow-hidden border-2 border-slate-700 flex flex-col">
+        <!-- Live Commentary Display Overlay -->
+        <div id="commentary-banner" class="hidden absolute top-2 left-1/2 -translate-x-1/2 z-20 bg-slate-950/90 border-2 border-amber-400 text-amber-300 px-4 py-1.5 rounded-full shadow-lg font-black text-sm md:text-base flex items-center gap-2 backdrop-blur-sm pointer-events-none">
+            <span class="animate-pulse text-red-500">🎙️</span>
+            <span id="commentary-text">ゲートが開いた！一斉にスタート！</span>
+        </div>
+
+        <!-- 破産（倒産）モーダルダイアログ -->
+        <div id="bankruptcy-modal" class="hidden absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+            <div class="bg-slate-900 border-2 border-red-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col gap-4">
+                <!-- ハンコ風デザイン -->
+                <div class="py-2">
+                    <div class="stamp-effect text-5xl select-none">倒産</div>
+                </div>
+
+                <div id="bankrupt-player-title" class="text-lg font-black text-red-400">1P PLAYER 倒産！</div>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    所持コインがゼロになりました。<br>借入して一発逆転を狙いますか？<br>
+                    <span class="text-amber-400 text-[11px]">※借金は1試合経過ごとに利子が1%増加します。</span>
+                </p>
+
+                <div class="flex flex-col gap-2 my-1">
+                    <span class="text-xs font-bold text-amber-400">【借入オプション（高利貸し）】</span>
+                    <button onclick="window.game.borrowLoan(10)" class="btn-arcade bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
+                        <span>🪙 10枚借りる</span>
+                        <span class="text-[10px] bg-slate-950/40 text-amber-200 px-1.5 py-0.5 rounded">返済: 15枚 (利子50%)</span>
+                    </button>
+                    <button onclick="window.game.borrowLoan(50)" class="btn-arcade bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-slate-950 font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
+                        <span>🪙 50枚借りる</span>
+                        <span class="text-[10px] bg-slate-950/40 text-orange-200 px-1.5 py-0.5 rounded">返済: 80枚 (利子60%)</span>
+                    </button>
+                    <button onclick="window.game.borrowLoan(100)" class="btn-arcade bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
+                        <span>🪙 100枚借りる</span>
+                        <span class="text-[10px] bg-slate-950/40 text-red-200 px-1.5 py-0.5 rounded">返済: 180枚 (利子80%)</span>
+                    </button>
+                </div>
+
+                <button onclick="window.game.quitGame()" class="btn-arcade bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-lg text-xs border border-slate-600">
+                    🚪 ゲームを辞める（リセット）
+                </button>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" class="w-full h-full"></canvas>
+
+        <!-- 中央ステータス帯（対面双方向から見られる戦績表示） -->
+        <div id="center-race-history-banner" class="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center gap-1 my-auto">
+            <div class="w-full bg-slate-950/90 border-y-2 border-amber-500/80 backdrop-blur-md px-3 py-1.5 flex flex-col gap-1 shadow-2xl">
+                <!-- 2P向け表示 (180度回転して上向きプレイヤーから正視) -->
+                <div class="flex items-center justify-between w-full text-[11px] font-black text-cyan-300 transform rotate-180 border-b border-cyan-500/30 pb-1">
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="bg-cyan-950 text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-700">🏆 過去5戦 2P視点</span>
+                    </div>
+                    <div id="center-p2-race-history" class="flex items-center gap-1.5 overflow-x-auto text-[10px] text-slate-300">
+                        <span class="text-slate-500">直近のレース記録なし</span>
+                    </div>
+                </div>
+
+                <!-- 1P向け表示 (通常向きで下向きプレイヤーから正視) -->
+                <div class="flex items-center justify-between w-full text-[11px] font-black text-rose-300 pt-0.5">
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded border border-rose-700">🏆 過去5戦 1P視点</span>
+                    </div>
+                    <div id="center-p1-race-history" class="flex items-center gap-1.5 overflow-x-auto text-[10px] text-slate-300">
+                        <span class="text-slate-500">直近のレース記録なし</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 1P Control Panel (BOTTOM) -->
+    <footer class="w-full max-w-5xl mx-auto bg-slate-900 p-2 rounded-xl border-2 border-rose-500/50 shadow-md flex flex-col gap-1.5">
+        <!-- 1P Active Selection & Summary / Carrot Bar -->
+        <div id="p1-bet-bar" class="bg-slate-950/80 p-1.5 rounded border border-rose-900 min-h-[32px] flex items-center justify-between text-xs overflow-x-auto">
+            <div id="p1-bets-summary" class="flex items-center gap-1 text-slate-400 text-[11px]">1P: 馬を選択してベット</div>
+            <div id="p1-racing-carrots" class="hidden flex gap-1"></div>
+        </div>
+
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🟥</span>
+                <span class="font-black text-sm text-rose-400">1P PLAYER</span>
+                <div class="bg-slate-950 px-2 py-1 rounded border border-rose-800 flex items-center gap-1 text-xs">
+                    <span class="text-yellow-400">🪙</span>
+                    <span id="p1-medals" class="font-bold text-yellow-400">100</span>枚
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1">
+                <button id="p1-tab-single" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-rose-600 text-white">単勝</button>
+                <button id="p1-tab-exacta" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300">馬連</button>
+                <button id="p1-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-2 py-1 rounded text-xs">単位: 1枚</button>
+            </div>
+
+            <button id="btn-start-race" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-4 py-1.5 rounded-lg text-sm border-b-2 border-emerald-800">
+                レーススタート！ 🏇
+            </button>
+        </div>
+    </footer>
+
+    <!-- Audio Web API -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'bet') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'carrot') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'heartbeat') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'win') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } else if (type === 'coin') {
+                    // チャリーンサウンド
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1500 + Math.random() * 400, now);
+                    osc.frequency.exponentialRampToValueAtTime(3000, now + 0.08);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                }
+            } catch (e) {}
+        }
+    </script>
+
+    <!-- Game Logic -->
+    <script>
+    // 馬のデータ定義定数
+    const HORSE_NAME_POOL = [
+        "サンダーボルト", "ディープスター", "ゴールドシップ", "キセキノハナ",
+        "サイレンスウインド", "キングカメハメ", "メジロクイーン", "トウカイテイオー",
+        "スペシャルウィーク", "オグリキャップ", "シンボリルドルフ", "オルフェーヴル",
+        "アーモンドアイ", "ウオッカ", "ダイワスカーレット", "ライスシャワー"
+    ];
+
+    const HORSE_TYPES = [
+        { styleName: "逃げ", typeKey: "speed", baseSpeed: 1.15, spurt: 0.95, desc: "序盤から飛ばして逃げ切る！" },
+        { styleName: "先行", typeKey: "steady", baseSpeed: 1.08, spurt: 1.02, desc: "好位をキープし安定した走り。" },
+        { styleName: "差し", typeKey: "chaser", baseSpeed: 1.00, spurt: 1.12, desc: "終盤の直線で一気に追い抜く！" },
+        { styleName: "追込", typeKey: "spurt", baseSpeed: 0.92, spurt: 1.25, desc: "最後方から強烈な末脚を発揮！" },
+        { styleName: "コーナー", typeKey: "chibi", baseSpeed: 1.02, spurt: 1.08, desc: "コーナーでの加速が得意！" },
+        { styleName: "ムラ気", typeKey: "yokozuna", baseSpeed: 1.05, spurt: 1.10, desc: "調子の波が激しい穴馬！" }
+    ];
+
+    const HORSE_BODY_COLORS = [
+        "#f97316", "#3b82f6", "#ec4899", "#8b5cf6", "#10b981", "#eab308"
+    ];
+
+    class HorseRacingGame {
+        constructor() {
+            this.canvas = document.getElementById('gameCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            
+            this.p1 = { medals: 100, debt: 0, betAmount: 1, mode: "SINGLE", singleBets: {}, exactaBets: {}, exactaSel: null, carrots: [0,0,0,0,0,0] };
+            this.p2 = { medals: 100, debt: 0, betAmount: 1, mode: "SINGLE", singleBets: {}, exactaBets: {}, exactaSel: null, carrots: [0,0,0,0,0,0] };
+
+            this.state = "BETTING";
+            this.bankruptPlayer = null; // 倒産状態のプレイヤー
+            this.horses = [];
+            this.particles = [];
+            this.rankings = [];
+            this.raceHistory = []; // ★ 過去5戦の【優勝馬・2位馬】の記録保存用
+            this.isPhotoFinish = false;
+            this.raceMode = "NORMAL";
+            this.p1Cards = [];
+            this.p2Cards = [];
+            this.coinParticles = [];
+            this.p1WonMedalsThisRace = 0;
+            this.p2WonMedalsThisRace = 0;
+            this.animFrame = 0;
+
+            // 実況管理フラグ
+            this.commentaryPhasesTriggered = {
+                start: false,
+                early: false,
+                mid: false,
+                turn: false,
+                straight: false,
+                goal: false,
+                result: false
+            };
+
+            this.initCanvasSize();
+            this.initHorses();
+            this.setupEvents();
+
+            window.addEventListener('resize', () => this.initCanvasSize());
+            requestAnimationFrame((t) => this.loop(t));
+        }
+
+        setupEvents() {
+            // Canvas Click Event (Select bets / Dismiss result screen)
+            this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+
+            // Start Race Buttons
+            const btnStartP1 = document.getElementById('btn-start-race');
+            const btnStartP2 = document.getElementById('btn-start-race-p2');
+            if (btnStartP1) btnStartP1.addEventListener('click', () => this.startRace());
+            if (btnStartP2) btnStartP2.addEventListener('click', () => this.startRace());
+
+            // 1P Control Handlers
+            const p1TabSingle = document.getElementById('p1-tab-single');
+            const p1TabExacta = document.getElementById('p1-tab-exacta');
+            const p1BtnUnit = document.getElementById('p1-btn-bet-unit');
+
+            if (p1TabSingle) {
+                p1TabSingle.addEventListener('click', () => {
+                    this.p1.mode = "SINGLE";
+                    p1TabSingle.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-rose-600 text-white";
+                    if (p1TabExacta) p1TabExacta.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300";
+                    this.updateBetUI();
+                });
+            }
+
+            if (p1TabExacta) {
+                p1TabExacta.addEventListener('click', () => {
+                    this.p1.mode = "EXACTA";
+                    this.p1.exactaSel = null;
+                    p1TabExacta.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-rose-600 text-white";
+                    if (p1TabSingle) p1TabSingle.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300";
+                    this.updateBetUI();
+                });
+            }
+
+            if (p1BtnUnit) {
+                p1BtnUnit.addEventListener('click', () => {
+                    const units = [1, 10, 50, "ALL"];
+                    let idx = units.indexOf(this.p1.betAmount);
+                    this.p1.betAmount = units[(idx + 1) % units.length];
+                    playSound('bet');
+                    this.updateBetUI();
+                });
+            }
+
+            // 2P Control Handlers
+            const p2TabSingle = document.getElementById('p2-tab-single');
+            const p2TabExacta = document.getElementById('p2-tab-exacta');
+            const p2BtnUnit = document.getElementById('p2-btn-bet-unit');
+
+            if (p2TabSingle) {
+                p2TabSingle.addEventListener('click', () => {
+                    this.p2.mode = "SINGLE";
+                    p2TabSingle.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-cyan-600 text-white";
+                    if (p2TabExacta) p2TabExacta.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300";
+                    this.updateBetUI();
+                });
+            }
+
+            if (p2TabExacta) {
+                p2TabExacta.addEventListener('click', () => {
+                    this.p2.mode = "EXACTA";
+                    this.p2.exactaSel = null;
+                    p2TabExacta.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-cyan-600 text-white";
+                    if (p2TabSingle) p2TabSingle.className = "btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300";
+                    this.updateBetUI();
+                });
+            }
+
+            if (p2BtnUnit) {
+                p2BtnUnit.addEventListener('click', () => {
+                    const units = [1, 10, 50, "ALL"];
+                    let idx = units.indexOf(this.p2.betAmount);
+                    this.p2.betAmount = units[(idx + 1) % units.length];
+                    playSound('bet');
+                    this.updateBetUI();
+                });
+            }
+        }
+
+        initCanvasSize() {
+            const rect = this.canvas.parentElement.getBoundingClientRect();
+            this.canvas.width = rect.width;
+            this.canvas.height = rect.height;
+        }
+
+        initHorses() {
+            const shuffledNames = [...HORSE_NAME_POOL].sort(() => Math.random() - 0.5).slice(0, 6);
+            const shuffledTypes = [...HORSE_TYPES].sort(() => Math.random() - 0.5);
+            const shuffledColors = [...HORSE_BODY_COLORS].sort(() => Math.random() - 0.5);
+            
+            const rnd = Math.random();
+            if (rnd < 0.20) {
+                this.raceMode = "BURST";
+            } else if (rnd < 0.20 + 0.333) {
+                this.raceMode = "NEAR_MISS";
+            } else {
+                this.raceMode = "NORMAL";
+            }
+
+            const tempHorses = shuffledNames.map((name, idx) => {
+                const type = shuffledTypes[idx];
+                const color = shuffledColors[idx];
+                const conditionBonus = (Math.random() * 0.24) - 0.12;
+                const breakoutForm = (Math.random() < 0.15) ? 0.10 : 0.0;
+                const effectiveSpeed = type.baseSpeed + conditionBonus + breakoutForm;
+                const rating = effectiveSpeed * 0.6 + type.spurt * 0.4;
+                return { name, type, color, effectiveSpeed, rating, idx };
+            });
+
+            const maxRating = Math.max(...tempHorses.map(h => h.rating));
+            const minRating = Math.min(...tempHorses.map(h => h.rating));
+
+            this.horses = tempHorses.map((item) => {
+                const { name, type, color, effectiveSpeed, rating, idx } = item;
+                
+                const normalizedRank = (rating - minRating) / (maxRating - minRating || 1);
+                let oddsVal;
+                if (normalizedRank > 0.8) {
+                    oddsVal = 1.1 + (1.0 - normalizedRank) * 2.5;
+                } else if (normalizedRank > 0.5) {
+                    oddsVal = 1.7 + (0.8 - normalizedRank) * 4.0;
+                } else if (normalizedRank > 0.2) {
+                    oddsVal = 3.0 + (0.5 - normalizedRank) * 10.0;
+                } else {
+                    oddsVal = 6.5 + (0.2 - normalizedRank) * 45.0;
+                }
+                const odds = parseFloat(Math.min(18.0, Math.max(1.1, oddsVal)).toFixed(1));
+
+                let nigeMode = "NORMAL";
+                if (type.styleName === "逃げ") {
+                    const rndNige = Math.random();
+                    if (rndNige < 0.35) nigeMode = "ESCAPE";
+                    else if (rndNige < 0.75) nigeMode = "NORMAL";
+                    else nigeMode = "TIRED";
+                }
+
+                let sashiMode = "STEADY";
+                if (type.styleName === "差し") {
+                    const rndSashi = Math.random();
+                    if (rndSashi < 0.33) sashiMode = "SUCCESS";
+                    else if (rndSashi < 0.66) sashiMode = "STEADY";
+                    else sashiMode = "TOO_LATE";
+                }
+
+                return {
+                    id: idx + 1,
+                    name: name,
+                    color: color,
+                    styleName: type.styleName,
+                    typeKey: type.typeKey,
+                    desc: type.desc,
+                    baseSpeed: effectiveSpeed,
+                    spurtPower: type.spurt + ((Math.random() * 0.08) - 0.04),
+                    nigeMode: nigeMode,
+                    sashiMode: sashiMode,
+                    odds: odds,
+                    progress: 0,
+                    laneOffset: (idx - 2.5) * 11,
+                    isBoosting: false,
+                    boostTimer: 0,
+                    rank: 0,
+                    x: 0,
+                    y: 0
+                };
+            });
+
+            this.clearBets(this.p1);
+            this.clearBets(this.p2);
+            this.hideCommentary();
+        }
+
+        clearBets(player) {
+            player.singleBets = {};
+            player.exactaBets = {};
+            player.exactaSel = null;
+            player.carrots = [0,0,0,0,0,0];
+        }
+
+        // 実況表示関数
+        speakCommentary(text) {
+            const banner = document.getElementById('commentary-banner');
+            const label = document.getElementById('commentary-text');
+            if (banner && label) {
+                banner.classList.remove('hidden');
+                label.textContent = text;
+                banner.classList.remove('animate-commentary');
+                void banner.offsetWidth; // Trigger reflow for animation restart
+                banner.classList.add('animate-commentary');
+            }
+        }
+
+        hideCommentary() {
+            const banner = document.getElementById('commentary-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        calculatePayouts() {
+            if (this.rankings.length < 2) return;
+
+            // ★ 直近5戦の優勝馬・2位馬履歴を更新
+            const winner = this.rankings[0];
+            const runnerUp = this.rankings[1];
+            this.raceHistory.unshift({
+                firstId: winner.id,
+                firstName: winner.name,
+                firstColor: winner.color,
+                secondId: runnerUp.id,
+                secondName: runnerUp.name,
+                secondColor: runnerUp.color
+            });
+            if (this.raceHistory.length > 5) {
+                this.raceHistory.pop();
+            }
+
+            // レース終了時に残存する借金に対して試合毎の1%利子を加算
+            [this.p1, this.p2].forEach(p => {
+                if (p.debt > 0) {
+                    p.debt = Math.ceil(p.debt * 1.01);
+                }
+            });
+
+            const first = this.rankings[0].id;
+            const second = this.rankings[1].id;
+            const quinellaKey = first < second ? (first + '-' + second) : (second + '-' + first);
+
+            const calcPlayerPayout = (player) => {
+                let winMedals = 0;
+                const singleAmount = player.singleBets[first] || 0;
+                if (singleAmount > 0) {
+                    const h = this.horses.find(function(item) { return item.id === first; });
+                    winMedals += Math.floor(singleAmount * (h ? h.odds : 1));
+                }
+
+                const exactaAmount = player.exactaBets[quinellaKey] || 0;
+                if (exactaAmount > 0) {
+                    const h1 = this.horses.find(function(item) { return item.id === first; });
+                    const h2 = this.horses.find(function(item) { return item.id === second; });
+                    const odds = (h1 && h2) ? parseFloat(Math.min(25.0, (h1.odds + h2.odds) * 0.8).toFixed(1)) : 2.0;
+                    winMedals += Math.floor(exactaAmount * odds);
+                }
+
+                player.medals += winMedals;
+
+                // 当たった場合に返済のため自動的に当たった分だけ引き取る（返済に充てる）
+                if (player.debt > 0 && winMedals > 0) {
+                    const payAmount = Math.min(player.medals, player.debt);
+                    player.medals -= payAmount;
+                    player.debt -= payAmount;
+                }
+
+                return winMedals;
+            };
+
+            const calcPlayerTotalBet = (player) => {
+                let total = 0;
+                for (let k in player.singleBets) total += player.singleBets[k];
+                for (let k in player.exactaBets) total += player.exactaBets[k];
+                return total;
+            };
+
+            this.p1BetMedalsThisRace = calcPlayerTotalBet(this.p1);
+            this.p2BetMedalsThisRace = calcPlayerTotalBet(this.p2);
+
+            this.p1WonMedalsThisRace = calcPlayerPayout(this.p1);
+            this.p2WonMedalsThisRace = calcPlayerPayout(this.p2);
+
+            // 1,2,3位が決まったので当たらなかった馬券含めベット情報を即時クリア
+            this.clearBets(this.p1);
+            this.clearBets(this.p2);
+
+            this.updateBetUI();
+
+            if (this.p1WonMedalsThisRace > 0 || this.p2WonMedalsThisRace > 0) {
+                playSound('win');
+                if (this.p1WonMedalsThisRace > 0) {
+                    this.spawnCoinExplosion(this.p1WonMedalsThisRace, "1P");
+                }
+                if (this.p2WonMedalsThisRace > 0) {
+                    this.spawnCoinExplosion(this.p2WonMedalsThisRace, "2P");
+                }
+            }
+
+            // 払い戻し＆馬券クリア後にコインが0枚であれば即座に倒産を判定・表示
+            this.checkBankruptcy();
+        }
+
+        spawnCoinExplosion(amount, playerTag) {
+            const count = Math.min(60, Math.max(12, Math.floor(amount * 1.5)));
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+
+            // 1Pは画面下側から、2Pは画面上側からコインが吹き出す
+            const startX = playerTag === "1P" ? w * 0.75 : w * 0.25;
+            const startY = playerTag === "1P" ? h + 10 : -10;
+            const vyBase = playerTag === "1P" ? -(Math.random() * 12 + 10) : (Math.random() * 12 + 10);
+
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    this.coinParticles.push({
+                        x: startX + (Math.random() - 0.5) * 120,
+                        y: startY,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: vyBase,
+                        gravity: playerTag === "1P" ? 0.45 : -0.45,
+                        size: Math.random() * 8 + 12,
+                        rotation: Math.random() * Math.PI * 2,
+                        vRot: (Math.random() - 0.5) * 0.3,
+                        playerTag: playerTag,
+                        life: 180
+                    });
+                    if (i % 3 === 0) playSound('coin');
+                }, i * 35);
+            }
+        }
+
+        rollCarrots(player, horseIndex, amount) {
+            const tries = Math.floor(amount / 10);
+            for (let i = 0; i < tries; i++) {
+                if (Math.random() < 0.5) {
+                    if (player.carrots[horseIndex] < 5) {
+                        player.carrots[horseIndex]++;
+                    }
+                }
+            }
+        }
+
+        placeBet(player, mode, selection) {
+            const actualBetAmount = player.betAmount === "ALL" ? player.medals : player.betAmount;
+            const amount = Math.min(player.medals, actualBetAmount);
+            if (amount <= 0) return;
+
+            if (mode === "SINGLE") {
+                const idx = selection;
+                player.medals -= amount;
+                if (!player.singleBets[idx + 1]) {
+                    player.singleBets[idx + 1] = 0;
+                }
+                player.singleBets[idx + 1] += amount;
+                this.rollCarrots(player, idx, amount);
+            } else if (mode === "EXACTA") {
+                const f = selection[0] + 1;
+                const s = selection[1] + 1;
+                const key = f < s ? (f + "-" + s) : (s + "-" + f);
+                
+                player.medals -= amount;
+                if (!player.exactaBets[key]) {
+                    player.exactaBets[key] = 0;
+                }
+                player.exactaBets[key] += amount;
+                this.rollCarrots(player, selection[0], amount);
+                this.rollCarrots(player, selection[1], amount);
+            }
+
+            playSound('bet');
+            this.updateBetUI();
+        }
+
+        useCarrot(player, horseIndex) {
+            if (this.state !== "RACING") return;
+            if (player.carrots[horseIndex] > 0) {
+                player.carrots[horseIndex]--;
+                const h = this.horses[horseIndex];
+                h.isBoosting = true;
+                h.boostTimer = 18;
+                playSound('carrot');
+                
+                for (let i = 0; i < 8; i++) {
+                    this.particles.push({
+                        x: h.x, y: h.y,
+                        vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+                        color: "#f97316", life: 15
+                    });
+                }
+                this.updateBetUI();
+            }
+        }
+
+        startRace() {
+            if (this.state !== "BETTING") return;
+            this.state = "RACING";
+            this.rankings = [];
+            this.isPhotoFinish = false;
+            
+            // 実況フラグのリセット
+            this.commentaryPhasesTriggered = {
+                start: false,
+                early: false,
+                mid: false,
+                turn: false,
+                straight: false,
+                goal: false,
+                result: false
+            };
+
+            this.horses.forEach(h => {
+                h.progress = 0;
+                h.boostTimer = 0;
+                h.isBoosting = false;
+                h.rank = 0;
+            });
+            this.updateBetUI();
+        }
+
+        updateBetUI() {
+            // 戦績帯の表示切り替え（BETTINGの時のみ表示）
+            const historyBanner = document.getElementById('center-race-history-banner');
+            if (historyBanner) {
+                if (this.state === "BETTING") {
+                    historyBanner.classList.remove('hidden');
+                } else {
+                    historyBanner.classList.add('hidden');
+                }
+            }
+
+            const p1Label = document.getElementById('p1-medals');
+            const p2Label = document.getElementById('p2-medals');
+
+            p1Label.textContent = this.p1.medals + (this.p1.debt > 0 ? ` (借:${this.p1.debt})` : '');
+            p2Label.textContent = this.p2.medals + (this.p2.debt > 0 ? ` (借:${this.p2.debt})` : '');
+
+            // ★ 中央帯：馬の直近5戦（優勝・2位）履歴の表示更新（左側から1レース目、2レース目...の順に表示）
+            const renderRaceHistory = (elementId) => {
+                const container = document.getElementById(elementId);
+                if (!container) return;
+
+                if (this.raceHistory.length === 0) {
+                    container.innerHTML = `<span class="text-slate-500">直近のレース記録なし</span>`;
+                    return;
+                }
+
+                let html = '';
+                // 配列の末尾（最古の記録）から先頭（最新の記録）へ順番にたどることで左から「1レース目、2レース目...」順にする
+                const historyCount = this.raceHistory.length;
+                for (let i = historyCount - 1; i >= 0; i--) {
+                    const item = this.raceHistory[i];
+                    const raceNum = historyCount - i; // 通算/直近のレース番号（1, 2, 3, 4, 5）
+                    html += `
+                        <div class="bg-slate-900 border border-amber-500/40 rounded px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap shadow-sm">
+                            <span class="text-[9px] text-amber-400 font-bold">${raceNum}レース目</span>
+                            <span class="inline-flex items-center gap-0.5 bg-amber-500/20 px-1 rounded text-amber-200">
+                                <span class="w-2 h-2 rounded-full inline-block" style="background-color:${item.firstColor}"></span>
+                                🥇${item.firstId}.${item.firstName.slice(0, 4)}
+                            </span>
+                            <span class="inline-flex items-center gap-0.5 bg-slate-800 px-1 rounded text-slate-300">
+                                <span class="w-2 h-2 rounded-full inline-block" style="background-color:${item.secondColor}"></span>
+                                🥈${item.secondId}.${item.secondName.slice(0, 4)}
+                            </span>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            };
+
+            renderRaceHistory('center-p1-race-history');
+            renderRaceHistory('center-p2-race-history');
+
+            document.getElementById('p1-btn-bet-unit').textContent = `単位: ${this.p1.betAmount === "ALL" ? "ALL" : this.p1.betAmount + "枚"}`;
+            document.getElementById('p2-btn-bet-unit').textContent = `単位: ${this.p2.betAmount === "ALL" ? "ALL" : this.p2.betAmount + "枚"}`;
+
+            const renderSummary = (player, containerId) => {
+            const container = document.getElementById(containerId);
+            if (this.state === "RACING") return;
+
+            let html = '';
+            let total = 0;
+            for (let id in player.singleBets) {
+                if (player.singleBets[id] > 0) {
+                    total += player.singleBets[id];
+                    html += `<div class="bet-chip"><span>単勝${id}</span><span class="count">${player.singleBets[id]}</span></div>`;
+                }
+            }
+            for (let key in player.exactaBets) {
+                if (player.exactaBets[key] > 0) {
+                    total += player.exactaBets[key];
+                    html += `<div class="bet-chip"><span>馬連${key}</span><span class="count">${player.exactaBets[key]}</span></div>`;
+                }
+            }
+
+            const pTag = player === this.p1 ? "1P" : "2P";
+            container.innerHTML = total > 0 ? html : `<span class="text-slate-400 text-[11px]">${pTag}: 馬を選択してベット</span>`;
+        };
+
+        renderSummary(this.p1, 'p1-bets-summary');
+        renderSummary(this.p2, 'p2-bets-summary');
+
+            const renderRacingCarrots = (player, containerId) => {
+                const container = document.getElementById(containerId);
+                if (this.state !== "RACING") {
+                    container.classList.add('hidden');
+                    return;
+                }
+                container.classList.remove('hidden');
+                let html = '';
+                this.horses.forEach((h, idx) => {
+                    const count = player.carrots[idx];
+                    html += `<button onclick="window.game.useCarrot(${player === this.p1 ? 'window.game.p1' : 'window.game.p2'}, ${idx})" 
+                                    class="px-2 py-0.5 rounded text-xs font-bold border ${count > 0 ? 'bg-orange-500 border-yellow-300 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}">
+                                ${h.id}番🥕:${count}
+                             </button>`;
+                });
+                container.innerHTML = html;
+            };
+
+            renderRacingCarrots(this.p1, 'p1-racing-carrots');
+            renderRacingCarrots(this.p2, 'p2-racing-carrots');
+        }
+
+        checkBankruptcy() {
+            if (this.p1.medals <= 0 && this.getBetTotal(this.p1) === 0) {
+                this.showBankruptcyModal(this.p1, "1P");
+                return true;
+            }
+            if (this.p2.medals <= 0 && this.getBetTotal(this.p2) === 0) {
+                this.showBankruptcyModal(this.p2, "2P");
+                return true;
+            }
+            return false;
+        }
+
+        getBetTotal(player) {
+            let total = 0;
+            for (let k in player.singleBets) total += player.singleBets[k];
+            for (let k in player.exactaBets) total += player.exactaBets[k];
+            return total;
+        }
+
+        showBankruptcyModal(player, tag) {
+            this.bankruptPlayer = player;
+            const modal = document.getElementById('bankruptcy-modal');
+            const title = document.getElementById('bankrupt-player-title');
+            if (modal && title) {
+                title.textContent = `${tag} PLAYER 倒産！`;
+                modal.classList.remove('hidden');
+            }
+        }
+
+        borrowLoan(amount) {
+            if (!this.bankruptPlayer) return;
+
+            // それぞれ利子が 50%, 60%, 80%
+            let interestRate = 0.5;
+            if (amount === 50) interestRate = 0.6;
+            if (amount === 100) interestRate = 0.8;
+
+            const repayment = Math.floor(amount * (1 + interestRate));
+
+            this.bankruptPlayer.medals += amount;
+            this.bankruptPlayer.debt += repayment;
+
+            playSound('coin');
+
+            const modal = document.getElementById('bankruptcy-modal');
+            if (modal) modal.classList.add('hidden');
+            this.bankruptPlayer = null;
+
+            this.updateBetUI();
+        }
+
+        quitGame() {
+            location.reload();
+        }
+
+        handleCanvasClick(e) {
+            if (this.state === "BANKRUPT") return;
+
+            if (this.state === "RESULT") {
+                // 倒産状態の場合は画面タップで進ませない
+                if (this.bankruptPlayer) return;
+                this.state = "BETTING";
+                this.initHorses();
+                return;
+            }
+
+            if (this.state !== "BETTING") return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            const processPlayerClick = (player, cards) => {
+                if (!cards) return;
+                cards.forEach(card => {
+                    if (clickX >= card.x && clickX <= card.x + card.width && clickY >= card.y && clickY <= card.y + card.height) {
+                        if (player.mode === "SINGLE") {
+                            this.placeBet(player, "SINGLE", card.index);
+                        } else if (player.mode === "EXACTA") {
+                            if (player.exactaSel === null) {
+                                player.exactaSel = card.index;
+                                playSound('bet');
+                            } else {
+                                if (player.exactaSel !== card.index) {
+                                    this.placeBet(player, "EXACTA", [player.exactaSel, card.index]);
+                                }
+                                player.exactaSel = null;
+                            }
+                        }
+                    }
+                });
+            };
+
+            if (clickY < this.canvas.height / 2) {
+                processPlayerClick(this.p2, this.p2Cards);
+            } else {
+                processPlayerClick(this.p1, this.p1Cards);
+            }
+        }
+
+        updateRace() {
+            if (this.state !== "RACING") return;
+
+            const topHorses = [...this.horses].sort((a,b) => b.progress - a.progress);
+            const leader = topHorses[0];
+            const secondPlace = topHorses[1];
+            const thirdPlace = topHorses[2];
+            const tailHorse = topHorses[topHorses.length - 1];
+            
+            const isSecondBattleClose = secondPlace && thirdPlace && (secondPlace.progress - thirdPlace.progress < 0.03);
+
+            // ------------------ リアルタイム実況ロジック ------------------
+            const p = leader.progress;
+
+            // スタート直後 (0% ~ 5%)
+            if (p < 0.05 && !this.commentaryPhasesTriggered.start) {
+                this.commentaryPhasesTriggered.start = true;
+                const lines = ["ゲートが開いた！一斉にスタート！", `${leader.id}番${leader.name}、好スタートを切った！`];
+                if (tailHorse.progress < 0.01) lines.push(`${tailHorse.id}番${tailHorse.name}、やや出遅れた！`);
+                this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
+            }
+            // 序盤 (12% ~ 28%)
+            else if (p >= 0.12 && p < 0.28 && !this.commentaryPhasesTriggered.early) {
+                this.commentaryPhasesTriggered.early = true;
+                const lines = [
+                    `${leader.id}番${leader.name}が先頭に立った！ハナを奪う！`,
+                    `${secondPlace.id}番${secondPlace.name}は好位につける！`,
+                    `${tailHorse.id}番${tailHorse.name}は後方からの競馬！`,
+                    "縦長の展開、馬群が広がる！"
+                ];
+                this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
+            }
+            // 中盤 (40% ~ 58%)
+            else if (p >= 0.40 && p < 0.58 && !this.commentaryPhasesTriggered.mid) {
+                this.commentaryPhasesTriggered.mid = true;
+                const lines = [
+                    "中盤にかかり、徐々にペースが上がる！",
+                    "先頭争いが激しくなってきた！",
+                    `${secondPlace.id}番${secondPlace.name}、外から上がってきた！`,
+                    "後方勢はじっと脚をためている！",
+                    "各馬、徐々に進出！"
+                ];
+                this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
+            }
+            // 最終コーナー (68% ~ 78%)
+            else if (p >= 0.68 && p < 0.78 && !this.commentaryPhasesTriggered.turn) {
+                this.commentaryPhasesTriggered.turn = true;
+                const lines = [
+                    "さあ、レースは最後のコーナーへ！",
+                    `${leader.id}番${leader.name}、まだ先頭は譲らない！`,
+                    `後方から${tailHorse.id}番${tailHorse.name}が大外から来た！`,
+                    "一気にまくってきた！各馬直線へ！"
+                ];
+                this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
+            }
+            // 直線 (80% ~ 88%)
+            else if (p >= 0.80 && p < 0.88 && !this.commentaryPhasesTriggered.straight) {
+                this.commentaryPhasesTriggered.straight = true;
+                const lines = [
+                    "さあ直線！激しい追い比べだ！",
+                    "各馬ムチが飛ぶ！",
+                    `${secondPlace.id}番${secondPlace.name}が先頭に並んだ！差が縮まる！`,
+                    `${leader.id}番${leader.name}が抜け出した！`,
+                    "大外から強襲！内を突いてきた馬もいる！"
+                ];
+                this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
+            }
+            // ゴール前・接戦 (88%以上)
+            else if (p >= 0.88 && !this.commentaryPhasesTriggered.goal) {
+                this.commentaryPhasesTriggered.goal = true;
+                const lines = [
+                    "ゴール前！先頭はどの馬だ！？",
+                    "並んでゴールインか！？ハナ差の勝負！",
+                    "まさにクビの上げ下げ！最後は大接戦！"
+                ];
+                this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
+            }
+            // -------------------------------------------------------------
+
+            if (leader.progress > 0.88) {
+                this.isPhotoFinish = true;
+                if (Math.random() < 0.12) playSound('heartbeat');
+            } else {
+                this.isPhotoFinish = false;
+            }
+
+            const timeScale = this.isPhotoFinish ? 0.30 : 1.0;
+
+            this.horses.forEach(h => {
+                if (h.progress >= 1.0) return;
+
+                let speed = 0.0017 * h.baseSpeed * timeScale;
+                const progress = h.progress;
+
+                if (progress < 0.12) {
+                    speed *= 1.08;
+                }
+
+                if (h.styleName === "逃げ") {
+                    if (progress >= 0.12 && progress < 0.50) {
+                        speed *= 1.15;
+                    } else if (progress > 0.70) {
+                        if (h.nigeMode === "ESCAPE") {
+                            speed *= 1.08;
+                        } else if (h.nigeMode === "TIRED") {
+                            speed *= 0.88;
+                        } else {
+                            speed *= 0.97;
+                        }
+                    }
+                } else if (h.styleName === "先行") {
+                    if (progress > 0.20 && progress < 0.65) speed *= 1.08;
+                    else if (progress >= 0.65) speed *= 1.05;
+                } else if (h.styleName === "差し") {
+                    if (progress < 0.55) {
+                        speed *= 0.98;
+                    } else {
+                        if (h.sashiMode === "SUCCESS") {
+                            speed *= 1.14;
+                        } else if (h.sashiMode === "TOO_LATE") {
+                            speed *= 1.07;
+                        } else {
+                            speed *= 1.01;
+                        }
+                    }
+                } else if (h.styleName === "追込") {
+                    if (progress < 0.45) {
+                        speed *= 0.90;
+                    } else {
+                        let spurtMult = 1.12;
+                        if (this.raceMode === "BURST") {
+                            spurtMult = 1.25;
+                        } else if (this.raceMode === "NEAR_MISS") {
+                            spurtMult = 1.18;
+                        }
+
+                        speed *= (h.spurtPower * spurtMult);
+                        
+                        if (Math.random() < 0.3) {
+                            this.particles.push({
+                                x: h.x + (Math.random() - 0.5) * 8, 
+                                y: h.y + (Math.random() - 0.5) * 8,
+                                vx: (Math.random() - 0.5) * 3, 
+                                vy: (Math.random() - 0.5) * 3,
+                                color: "#f59e0b", 
+                                life: 14
+                            });
+                        }
+                    }
+                } else if (h.styleName === "コーナー") {
+                    if ((progress > 0.20 && progress < 0.45) || (progress > 0.68 && progress < 0.90)) {
+                        speed *= 1.22;
+                    }
+                } else if (h.styleName === "ムラ気") {
+                    const mood = Math.sin(progress * Math.PI * 8);
+                    if (mood > 0.3) speed *= (this.raceMode === "BURST" ? 1.30 : 1.18);
+                    else if (mood < -0.3) speed *= 0.75;
+                }
+
+                if (isSecondBattleClose && progress > 0.75 && (h === secondPlace || h === thirdPlace)) {
+                    speed *= (1.04 + (Math.random() * 0.04));
+                }
+
+                if (progress > 0.65 && h !== leader) {
+                    const distanceToLeader = leader.progress - h.progress;
+                    if (distanceToLeader > 0.04) {
+                        let boostRatio = 0.5;
+                        if (this.raceMode === "BURST") boostRatio = 1.0;
+                        else if (this.raceMode === "NEAR_MISS") boostRatio = 0.7;
+
+                        speed *= (1.0 + Math.min(0.18, distanceToLeader * boostRatio));
+                    }
+                }
+
+                if (h.boostTimer > 0) {
+                    speed *= 1.25;
+                    h.boostTimer--;
+                    if (h.boostTimer === 0) h.isBoosting = false;
+                }
+
+                speed += (Math.random() - 0.5) * 0.0004 * timeScale;
+                h.progress += speed;
+
+                if (h.progress >= 1.0) {
+                    h.progress = 1.0;
+                    if (!this.rankings.includes(h)) {
+                        this.rankings.push(h);
+                        h.rank = this.rankings.length;
+                    }
+                }
+
+                this.updateHorsePos(h);
+            });
+
+            if (this.rankings.length >= 3) {
+                this.state = "RESULT";
+                this.triggerResultCommentary();
+                this.calculatePayouts();
+            }
+        }
+
+        // 決着時（勝利・波乱）の実況トリガー
+        triggerResultCommentary() {
+            if (this.commentaryPhasesTriggered.result || this.rankings.length === 0) return;
+            this.commentaryPhasesTriggered.result = true;
+
+            const winner = this.rankings[0];
+            const isHighOdds = winner.odds >= 5.0;
+
+            const winLines = [
+                `勝ったのは${winner.name}！`,
+                `${winner.name}、見事な勝利！`,
+                winner.styleName === "逃げ" ? `${winner.name}、堂々の逃げ切り！` : `${winner.name}、豪快な差し切り！`
+            ];
+
+            if (isHighOdds) {
+                winLines.push(`大金星です！${winner.name}が波乱を巻き起こした！`);
+                winLines.push("まさかの展開！波乱の決着となりました！");
+            }
+
+            this.speakCommentary(winLines[Math.floor(Math.random() * winLines.length)]);
+        }
+
+        updateHorsePos(h) {
+            const w = this.canvas.width;
+            const hCanvas = this.canvas.height;
+            const margin = 70;
+            const rx = (w - margin * 2) / 2;
+            const ry = (hCanvas - margin * 2) / 2;
+            const cx = w / 2;
+            const cy = hCanvas / 2;
+
+            const angle = Math.PI * 0.5 - (h.progress * Math.PI * 2);
+
+            // 6本のレーン（内側〜外側）に分散させるため laneOffset を計算 (1番馬=内側、6番馬=外側)
+            const laneSpacing = 11;
+            const laneOffset = -27.5 + (h.id - 1) * laneSpacing;
+            h.laneOffset = laneOffset;
+
+            h.x = cx + (rx + laneOffset) * Math.cos(angle);
+            h.y = cy + (ry + laneOffset) * Math.sin(angle);
+            h.angle = angle;
+        }
+
+        drawTrack() {
+            const ctx = this.ctx;
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+            const margin = 70;
+            const rx = (w - margin * 2) / 2;
+            const ry = (h - margin * 2) / 2;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            // 1. 馬が走らない「外側エリア」をリアルな砂地（サディッシュベージュ＋サンドドット模様）に設定
+            ctx.fillStyle = '#d4b589'; 
+            ctx.fillRect(0, 0, w, h);
+
+            // 砂地の質感を出すノイズ/粒子効果
+            ctx.fillStyle = 'rgba(160, 120, 75, 0.18)';
+            for (let i = 0; i < w; i += 12) {
+                for (let j = 0; j < h; j += 12) {
+                    if ((i + j) % 5 === 0) {
+                        ctx.fillRect(i, j, 3, 3);
+                    }
+                }
+            }
+
+            // 外枠背景の薄いアクセント
+            ctx.fillStyle = '#be9d71';
+            ctx.fillRect(0, 0, w, 3);
+
+            // 2. 馬が走るコース全域（1〜6レーンおよび内・外枠境界線含む）
+            // 緑と黄緑の放射状ストライプを描画（コース部分）
+            const numStripes = 36;
+            
+            ctx.save();
+            // コース全体の楕円形状でクリッピング（外径: rx + 35 / 内径: rx - 35）
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx + 35, ry + 35, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx, cy, rx - 35, ry - 35, 0, 0, Math.PI * 2, true); // 内側を切り抜く
+            ctx.clip();
+
+            // 緑と黄緑のストライプ模様を描く
+            for (let i = 0; i < numStripes; i++) {
+                const a1 = (i / numStripes) * Math.PI * 2;
+                const a2 = ((i + 1) / numStripes) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, Math.max(w, h), a1, a2);
+                ctx.closePath();
+                // 緑(#16a34a) と 黄緑(#84cc16) のストライプ
+                ctx.fillStyle = (i % 2 === 0) ? '#16a34a' : '#84cc16';
+                ctx.fill();
+            }
+
+            // 3. レーン（1〜6番）ごとに異なる半透明の色を重ねて、各レーンの色を変える
+            const laneSpacing = 11;
+            const laneColors = [
+                'rgba(132, 204, 22, 0.45)', // 1レーン: 黄緑 (#84cc16)
+                'rgba(22, 163, 74, 0.45)',  // 2レーン: 緑 (#16a34a)
+                'rgba(132, 204, 22, 0.45)', // 3レーン: 黄緑 (#84cc16)
+                'rgba(22, 163, 74, 0.45)',  // 4レーン: 緑 (#16a34a)
+                'rgba(132, 204, 22, 0.45)', // 5レーン: 黄緑 (#84cc16)
+                'rgba(22, 163, 74, 0.45)'   // 6レーン: 緑 (#16a34a)
+            ];
+
+            for (let lane = 0; lane < 6; lane++) {
+                const innerR = -33 + lane * laneSpacing;
+                const outerR = -33 + (lane + 1) * laneSpacing;
+
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, rx + outerR, ry + outerR, 0, 0, Math.PI * 2);
+                ctx.ellipse(cx, cy, rx + innerR, ry + innerR, 0, 0, Math.PI * 2, true);
+                ctx.fillStyle = laneColors[lane];
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // 4. 馬が走らない「内側中央フィールド」も砂地ダートテクスチャ風に演出
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx - 35, ry - 35, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#cbb087'; 
+            ctx.fill();
+
+            // 内側フィールドのグラデーション・砂模様
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx - 38, ry - 38, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#d9bf98'; 
+            ctx.fill();
+
+            // 内側エリアのざらざら粒々（サンドテクスチャ）
+            ctx.fillStyle = 'rgba(140, 100, 60, 0.15)';
+            for (let r = 0; r < rx - 42; r += 10) {
+                const count = Math.floor((r * 2 * Math.PI) / 12);
+                for (let k = 0; k < count; k++) {
+                    const ang = (k / count) * Math.PI * 2;
+                    const px = cx + r * Math.cos(ang);
+                    const py = cy + (r * (ry / rx)) * Math.sin(ang);
+                    ctx.fillRect(px, py, 2, 2);
+                }
+            }
+
+            // 5. コースの 1〜6 レーン区分線 (白いガイド線)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 1;
+            for (let lane = 0; lane <= 6; lane++) {
+                const laneROffset = -33 + lane * laneSpacing;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, rx + laneROffset, ry + laneROffset, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // コースの内外境界線（くっきりした白線）
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx + 35, ry + 35, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx - 35, ry - 35, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 6. ゴールライン（赤線）
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + ry - 35);
+            ctx.lineTo(cx, cy + ry + 35);
+            ctx.stroke();
+
+            // ゴール白ライン
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(cx - 2, cy + ry - 35, 4, 70);
+
+            // 7. レーン番号 (1〜6) を表示
+            ctx.save();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const numberAngle = Math.PI * 0.5 - 0.08; // スタート直後の位置
+            for (let lane = 1; lane <= 6; lane++) {
+                const laneROffset = -27.5 + (lane - 1) * laneSpacing;
+                const numX = cx + (rx + laneROffset) * Math.cos(numberAngle);
+                const numY = cy + (ry + laneROffset) * Math.sin(numberAngle);
+
+                // ナンバー用バックグラウンド丸印
+                ctx.beginPath();
+                ctx.arc(numX, numY, 7, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fill();
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // 数字テキスト
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(lane, numX, numY + 0.5);
+            }
+            ctx.restore();
+        }
+
+        drawHorseIllustration(ctx, h) {
+            ctx.save();
+            ctx.translate(h.x, h.y);
+
+            // --- ベットマーク（一番賭けた馬だけに照準・ターゲットリングを表示） ---
+            const getMostBetHorseId = (player) => {
+                const totals = {};
+                for (let i = 1; i <= 6; i++) totals[i] = 0;
+                
+                // 単勝のカウント
+                for (let id in player.singleBets) {
+                    const count = player.singleBets[id] || 0;
+                    if (count > 0) totals[id] += count;
+                }
+                // 馬連のカウント
+                for (let key in player.exactaBets) {
+                    const count = player.exactaBets[key] || 0;
+                    if (count > 0) {
+                        const parts = key.split('-');
+                        parts.forEach(p => { if (totals[p] !== undefined) totals[p] += count; });
+                    }
+                }
+
+                let maxBet = 0;
+                let topHorseId = null;
+                for (let i = 1; i <= 6; i++) {
+                    if (totals[i] > maxBet) {
+                        maxBet = totals[i];
+                        topHorseId = i;
+                    }
+                }
+                return topHorseId;
+            };
+
+            const p1TopHorseId = getMostBetHorseId(this.p1);
+            const p2TopHorseId = getMostBetHorseId(this.p2);
+
+            const p1HasBet = (p1TopHorseId === h.id);
+            const p2HasBet = (p2TopHorseId === h.id);
+
+            if (p1HasBet || p2HasBet) {
+                ctx.save();
+                const ringRadius = 22;
+                const rotAngle = this.animFrame * 0.04;
+
+                const drawTargetRing = (color, radius, rotation, dashed = false) => {
+                    ctx.save();
+                    ctx.rotate(rotation);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2.5;
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 8;
+
+                    // 外枠の円
+                    ctx.beginPath();
+                    if (dashed) ctx.setLineDash([6, 4]);
+                    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // 4方向の照準照合線（クロスヘア）
+                    ctx.setLineDash([]);
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 4; i++) {
+                        const a = (Math.PI / 2) * i;
+                        ctx.beginPath();
+                        ctx.moveTo(Math.cos(a) * (radius - 5), Math.sin(a) * (radius - 5));
+                        ctx.lineTo(Math.cos(a) * (radius + 5), Math.sin(a) * (radius + 5));
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                };
+
+                if (p1HasBet && p2HasBet) {
+                    // 両方が同じ本命馬に賭けている場合は内外二重リング
+                    drawTargetRing('#ef4444', ringRadius + 4, rotAngle, false);  // 1P: 赤（外側）
+                    drawTargetRing('#38bdf8', ringRadius - 3, -rotAngle, true); // 2P: 青（内側点線）
+                } else if (p1HasBet) {
+                    drawTargetRing('#ef4444', ringRadius, rotAngle, false);     // 1P: 赤
+                } else if (p2HasBet) {
+                    drawTargetRing('#38bdf8', ringRadius, -rotAngle, false);    // 2P: 青
+                }
+                ctx.restore();
+            }
+            
+            const dirAngle = h.angle - Math.PI / 2;
+            ctx.rotate(dirAngle);
+
+            const scale = h.typeKey === "chibi" ? 0.75 : (h.typeKey === "yokozuna" ? 1.25 : (h.typeKey === "noppon" ? 1.1 : 1.0));
+            ctx.scale(scale, scale);
+
+            const anim = Math.sin(this.animFrame * 0.4 + h.id);
+
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-8, 5); ctx.lineTo(-12 + anim * 6, 15);
+            ctx.moveTo(8, 5);  ctx.lineTo(12 - anim * 6, 15);
+            ctx.moveTo(-5, 5); ctx.lineTo(-8 - anim * 6, 14);
+            ctx.moveTo(5, 5);  ctx.lineTo(8 + anim * 6, 14);
+            ctx.stroke();
+
+            ctx.fillStyle = h.color;
+            ctx.beginPath();
+            if (h.typeKey === "yokozuna") {
+                ctx.ellipse(0, 0, 18, 14, 0, 0, Math.PI * 2);
+            } else {
+                ctx.ellipse(0, 0, 16, 10, 0, 0, Math.PI * 2);
+            }
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(14, -6 + anim * 2, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.arc(0, -6, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = '900 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(h.id, 0, 0);
+
+            ctx.restore();
+        }
+
+        drawBettingScreen() {
+            const ctx = this.ctx;
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '900 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("🏇 馬券を選んでタップ！ 🪙", w / 2, 24);
+
+            const drawPlayerBetCards = (player, startY, isRotated) => {
+                const cardW = Math.min(130, (w - 40) / 3);
+                const cardH = 75;
+                const gap = 8;
+                const totalW = (cardW * 3) + (gap * 2);
+                const startX = (w - totalW) / 2;
+
+                const cards = [];
+
+                this.horses.forEach((horse, idx) => {
+                    const row = Math.floor(idx / 3);
+                    const col = idx % 3;
+                    const x = startX + col * (cardW + gap);
+                    const y = startY + row * (cardH + gap);
+
+                    cards.push({ index: idx, x, y, width: cardW, height: cardH });
+
+                    ctx.save();
+                    if (isRotated) {
+                        ctx.translate(x + cardW / 2, y + cardH / 2);
+                        ctx.rotate(Math.PI);
+                        ctx.translate(-(x + cardW / 2), -(y + cardH / 2));
+                    }
+
+                    let isSelected = false;
+                    if (player.mode === "EXACTA" && player.exactaSel === idx) isSelected = true;
+
+                    ctx.fillStyle = isSelected ? '#0284c7' : '#1e293b';
+                    ctx.strokeStyle = isSelected ? '#38bdf8' : '#334155';
+                    ctx.lineWidth = isSelected ? 3 : 1.5;
+
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, cardW, cardH, 8);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = horse.color;
+                    ctx.beginPath();
+                    ctx.arc(x + 18, y + 18, 10, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '900 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(horse.id, x + 18, y + 18);
+
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = '700 12px sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(horse.name, x + 34, y + 15);
+
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.font = '900 11px sans-serif';
+                    ctx.fillText(`オッズ: ${horse.odds}倍`, x + 34, y + 28);
+
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '600 9px sans-serif';
+                    ctx.fillText(`[${horse.styleName}] ${horse.desc.slice(0, 9)}...`, x + 8, y + 46);
+
+                    const bSingle = player.singleBets[horse.id] || 0;
+                    if (bSingle > 0) {
+                        ctx.fillStyle = '#ef4444';
+                        ctx.beginPath();
+                        ctx.arc(x + cardW - 12, y + 14, 9, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = '900 9px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(bSingle, x + cardW - 12, y + 14);
+                    }
+
+                    ctx.restore();
+                });
+
+                return cards;
+            };
+
+            this.p2Cards = drawPlayerBetCards(this.p2, 40, true);
+            this.p1Cards = drawPlayerBetCards(this.p1, h - 195, false);
+        }
+
+        drawResultScreen() {
+            const ctx = this.ctx;
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.save();
+            ctx.fillStyle = '#facc15';
+            ctx.font = '900 32px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 15;
+            ctx.fillText("🏁 ゴール！！ 🏁", w / 2, 50);
+            ctx.restore();
+
+            const podiumW = 110;
+            const startX = (w - (podiumW * 3 + 20)) / 2;
+
+            this.rankings.slice(0, 3).forEach((hItem, idx) => {
+                const x = startX + idx * (podiumW + 10);
+                const y = 75;
+
+                ctx.fillStyle = '#1e293b';
+                ctx.strokeStyle = idx === 0 ? '#f59e0b' : '#64748b';
+                ctx.lineWidth = idx === 0 ? 3 : 1;
+                ctx.beginPath();
+                ctx.roundRect(x, y, podiumW, 85, 10);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = idx === 0 ? '#f59e0b' : (idx === 1 ? '#94a3b8' : '#b45309');
+                ctx.font = '900 15px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${idx + 1}着`, x + podiumW / 2, y + 22);
+
+                ctx.fillStyle = hItem.color;
+                ctx.beginPath();
+                ctx.arc(x + podiumW / 2, y + 45, 11, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '900 11px sans-serif';
+                ctx.fillText(hItem.id, x + podiumW / 2, y + 45);
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '700 11px sans-serif';
+                ctx.fillText(hItem.name, x + podiumW / 2, y + 70);
+            });
+
+            // 1P & 2P それぞれの獲得メダル結果表示（賭けた枚数と獲得枚数を隣同士の箱に配置）
+            const drawPlayerPayoutSummary = (playerLabel, betAmount, wonAmount, color, isRotated, posX, posY) => {
+                ctx.save();
+                ctx.translate(posX, posY);
+                if (isRotated) ctx.rotate(Math.PI);
+
+                const cardW = 110;
+                const cardH = 50;
+                const gap = 10;
+                const totalWidth = cardW * 2 + gap;
+
+                // 全体タイトル
+                ctx.fillStyle = color;
+                ctx.font = '900 13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${playerLabel} レース結果`, 0, -32);
+
+                // 左の箱：賭けた枚数
+                const leftX = -totalWidth / 2;
+                ctx.fillStyle = '#0f172a';
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(leftX, -22, cardW, cardH, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '700 10px sans-serif';
+                ctx.fillText('賭けた枚数', leftX + cardW / 2, -6);
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '900 14px sans-serif';
+                ctx.fillText(`${betAmount || 0} 枚`, leftX + cardW / 2, 14);
+
+                // 右の箱：獲得枚数
+                const rightX = leftX + cardW + gap;
+                ctx.fillStyle = '#0f172a';
+                ctx.strokeStyle = wonAmount > 0 ? '#f59e0b' : color;
+                ctx.lineWidth = wonAmount > 0 ? 2 : 1.5;
+                ctx.beginPath();
+                ctx.roundRect(rightX, -22, cardW, cardH, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = wonAmount > 0 ? '#facc15' : '#94a3b8';
+                ctx.font = '700 10px sans-serif';
+                ctx.fillText('獲得枚数', rightX + cardW / 2, -6);
+                ctx.fillStyle = wonAmount > 0 ? '#f59e0b' : '#64748b';
+                ctx.font = '900 14px sans-serif';
+                ctx.fillText(wonAmount > 0 ? `+${wonAmount} 枚` : '0 枚', rightX + cardW / 2, 14);
+
+                ctx.restore();
+            };
+
+            // 2P (上側・反転表示用)
+            drawPlayerPayoutSummary("2P", this.p2BetMedalsThisRace, this.p2WonMedalsThisRace, '#38bdf8', true, w * 0.28, 210);
+            // 1P (下側・正位表示)
+            drawPlayerPayoutSummary("1P", this.p1BetMedalsThisRace, this.p1WonMedalsThisRace, '#f43f5e', false, w * 0.72, h - 55);
+
+            // コインの噴射描画
+            for (let i = this.coinParticles.length - 1; i >= 0; i--) {
+                const c = this.coinParticles[i];
+                c.x += c.vx;
+                c.y += c.vy;
+                c.vy += c.gravity;
+                c.rotation += c.vRot;
+                c.life--;
+
+                ctx.save();
+                ctx.translate(c.x, c.y);
+                ctx.rotate(c.rotation);
+                
+                // コイン外枠
+                ctx.fillStyle = c.playerTag === "2P" ? '#38bdf8' : '#eab308';
+                ctx.strokeStyle = c.playerTag === "2P" ? '#bae6fd' : '#fef08a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, c.size, c.size * 0.7, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // コインマーク
+                ctx.fillStyle = '#0f172a';
+                ctx.font = '900 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🪙', 0, 0);
+
+                ctx.restore();
+
+                if (c.y > h + 60 || c.y < -60 || c.life <= 0) {
+                    this.coinParticles.splice(i, 1);
+                }
+            }
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("画面をタップして次のレースへ！", w / 2, h / 2 + 10);
+        }
+
+        loop() {
+            this.animFrame++;
+            
+            if (this.state === "BETTING") {
+                this.drawBettingScreen();
+            } else if (this.state === "RACING") {
+                this.updateRace();
+
+                // スタートしたて（進捗 0% 〜 4%）のみズームインしてスタートダッシュ/出遅れを見やすくする
+                const leader = [...this.horses].sort((a,b) => b.progress - a.progress)[0];
+                const p = leader ? leader.progress : 0;
+                
+                let scale = 1.0;
+                let focusX = this.canvas.width / 2;
+                let focusY = this.canvas.height / 2;
+
+                if (p < 0.04) {
+                    // スタートした直後（0%~4%）だけ 1.6倍にクローズアップ！
+                    scale = 1.6;
+                } else if (p >= 0.04 && p < 0.08) {
+                    // 4%~8%で速やかに標準画面（1.0倍）へ引き戻す
+                    const ratio = (p - 0.04) / 0.04;
+                    scale = 1.6 - (0.6 * ratio);
+                }
+
+                if (scale > 1.0 && leader) {
+                    // 先頭・出遅れ群のいるスタート地点近辺にフォーカス
+                    focusX = leader.x;
+                    focusY = leader.y;
+                }
+
+                this.ctx.save();
+                if (scale > 1.0) {
+                    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+                    this.ctx.scale(scale, scale);
+                    this.ctx.translate(-focusX, -focusY);
+                }
+
+                this.drawTrack();
+
+                // 粒子の描画・更新
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const pItem = this.particles[i];
+                    pItem.x += pItem.vx;
+                    pItem.y += pItem.vy;
+                    pItem.life--;
+
+                    this.ctx.fillStyle = pItem.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(pItem.x, pItem.y, 3, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    if (pItem.life <= 0) {
+                        this.particles.splice(i, 1);
+                    }
+                }
+
+                this.horses.forEach(h => this.drawHorseIllustration(this.ctx, h));
+
+                this.ctx.restore(); // カメラ変形状態をリセット
+            } else if (this.state === "RESULT") {
+                this.drawTrack();
+                this.horses.forEach(h => this.drawHorseIllustration(this.ctx, h));
+                this.drawResultScreen();
+            }
+
+            requestAnimationFrame(() => this.loop());
+        }
+    }
+
+    window.addEventListener('load', () => {
+        window.game = new HorseRacingGame();
+    });
+    </script>
+</body>
+</html>
