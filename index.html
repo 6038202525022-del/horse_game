@@ -90,6 +90,69 @@
             letter-spacing: 0.2em;
         }
     </style>
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "dummy-key",
+            authDomain: "dummy.firebaseapp.com",
+            projectId: "dummy-project"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'horse-racing-app';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Firebase Auth Init
+        window.initFirebase = async function() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.warn("Auth initialization fallback:", e);
+            }
+        };
+
+        // セーブデータ参照用のヘルパー関数
+        window.getGameDocRef = function(p1Name, password, p2Name) {
+            const cleanPass = (password || '000000').toString().trim();
+            // パスワードのみをキーとしてセーブデータを識別
+            let rawId = `pass_${cleanPass}`.replace(/[^a-z0-9_]/g, '_');
+            rawId = rawId.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+            if (!rawId) rawId = 'pass_000000';
+            
+            const docId = `usr_${rawId}`;
+            return doc(db, 'artifacts', appId, 'public', 'data', 'saves', docId);
+        };
+
+        window.saveGameDataToCloud = async function(saveData) {
+            if (!auth.currentUser) await window.initFirebase();
+            const docRef = window.getGameDocRef(saveData.p1Name, saveData.password, saveData.p2Name);
+            await setDoc(docRef, {
+                ...saveData,
+                updatedAt: Date.now()
+            });
+        };
+
+        window.loadGameDataFromCloud = async function(p1Name, password, p2Name) {
+            if (!auth.currentUser) await window.initFirebase();
+            const docRef = window.getGameDocRef(p1Name, password, p2Name);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data();
+            }
+            return null;
+        };
+
+        window.initFirebase();
+    </script>
 </head>
 <body class="bg-slate-950 h-screen w-screen flex flex-col justify-between p-2">
 
@@ -109,6 +172,7 @@
                 <button id="p2-tab-single" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-600 text-white">単勝</button>
                 <button id="p2-tab-exacta" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">馬連</button>
                 <button id="p2-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-1.5 py-0.5 rounded text-[10px]">単位: 1枚</button>
+                <button onclick="window.game.saveData()" class="btn-arcade bg-blue-600 hover:bg-blue-500 text-white font-bold px-2 py-0.5 rounded text-[10px]">💾 セーブ</button>
             </div>
 
             <button id="btn-start-race-p2" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-2.5 py-0.5 rounded-lg text-[11px] border-b border-emerald-800">
@@ -290,6 +354,7 @@
                 <button id="p1-tab-single" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white">単勝</button>
                 <button id="p1-tab-exacta" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">馬連</button>
                 <button id="p1-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-1.5 py-0.5 rounded text-[10px]">単位: 1枚</button>
+                <button onclick="window.game.saveData()" class="btn-arcade bg-blue-600 hover:bg-blue-500 text-white font-bold px-2 py-0.5 rounded text-[10px]">💾 セーブ</button>
             </div>
 
             <button id="btn-start-race" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-0.5 rounded-lg text-xs border-b border-emerald-800">
@@ -362,7 +427,7 @@
     <script>
     // 馬のデータ定義定数
     const HORSE_NAME_POOL = [
-         "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
+        "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
         "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー","タッカルビカンタ","ナリタブライアン",
         "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ",
         "アーモンドアイ", "ウオッカ","サルトシッソク","ヒヨシメガネ","サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
@@ -391,6 +456,7 @@
 
             this.state = "LOGIN"; // 起動直後はログイン/注意書き状態
             this.username = "";
+            this.password = "";
             this.bankruptPlayer = null; // 倒産状態のプレイヤー
             this.horses = [];
             this.particles = [];
@@ -455,6 +521,7 @@
             }
 
             this.username = valName;
+            this.password = valPass;
             this.p1.name = valName; // 1Pの名前を代入
             
             // 画面上（下部パネル）の1P名表示を更新
@@ -499,7 +566,7 @@
             this.apply2PName("2P PLAYER");
         }
 
-        apply2PName(name) {
+        async apply2PName(name) {
             this.p2.name = name; // 2Pの名前を代入
 
             // 画面上（上部パネル）の2P名表示を更新
@@ -514,13 +581,90 @@
                 centerP2Label.textContent = `🏆 ${name}`;
             }
 
-            // 2Pモーダルを閉じてベット画面へ移行
+            // 2Pモーダルを閉じる
             const p2Modal = document.getElementById('p2-name-modal');
             if (p2Modal) p2Modal.classList.add('hidden');
 
             playSound('coin');
+
+            // ★ セーブデータの読み込み（1P名、パスワード、2P名から検索）
+            await this.tryLoadSavedData();
+
             this.state = "BETTING";
             this.updateBetUI();
+        }
+
+        // セーブデータ復元処理（5日間の有効期限チェック付き）
+        async tryLoadSavedData() {
+            try {
+                if (typeof window.loadGameDataFromCloud === 'function') {
+                    const savedData = await window.loadGameDataFromCloud(this.p1.name, this.password, this.p2.name);
+                    if (savedData) {
+                        const now = Date.now();
+                        const fiveDaysMs = 5 * 24 * 60 * 60 * 1000; // 5日間 (ミリ秒)
+
+                        if (savedData.updatedAt && (now - savedData.updatedAt > fiveDaysMs)) {
+                            this.showMessageBox("⚠️ セーブデータの保存期限（5日間）が切れていたため、新規データでスタートします。");
+                        } else {
+                            // 復元成功
+                            this.p1.medals = savedData.p1Medals ?? 100;
+                            this.p1.debt = savedData.p1Debt ?? 0;
+                            this.p2.medals = savedData.p2Medals ?? 100;
+                            this.p2.debt = savedData.p2Debt ?? 0;
+                            if (savedData.raceHistory) {
+                                this.raceHistory = savedData.raceHistory;
+                            }
+                            this.showMessageBox("📂 以前のセーブデータを復元しました！");
+                            playSound('win');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load save data:", err);
+            }
+        }
+
+        // 手動セーブ処理
+        async saveData() {
+            try {
+                if (typeof window.saveGameDataToCloud === 'function') {
+                    const saveData = {
+                        p1Name: this.p1.name || this.username || "1P PLAYER",
+                        password: this.password || "000000",
+                        p2Name: this.p2.name || "2P PLAYER",
+                        p1Medals: this.p1.medals,
+                        p1Debt: this.p1.debt,
+                        p2Medals: this.p2.medals,
+                        p2Debt: this.p2.debt,
+                        raceHistory: this.raceHistory
+                    };
+                    await window.saveGameDataToCloud(saveData);
+                    this.showMessageBox("💾 ゲームデータ（メダル・戦績）を保存しました！\n※保存期間は5日間です。");
+                    playSound('coin');
+                }
+            } catch (err) {
+                console.error("Failed to save data:", err);
+                this.showMessageBox("❌ 保存に失敗しました。時間をおいて再試行してください。");
+            }
+        }
+
+        // メッセージ通知モーダル表示用（alert代替）
+        showMessageBox(msg) {
+            let box = document.getElementById('game-msg-box');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'game-msg-box';
+                box.className = 'fixed top-12 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border-2 border-amber-400 text-amber-200 px-4 py-2 rounded-xl shadow-2xl text-xs font-black text-center backdrop-blur-md transition-all duration-300 opacity-0 transform -translate-y-2 pointer-events-none';
+                document.body.appendChild(box);
+            }
+            box.innerText = msg;
+            box.classList.remove('opacity-0', '-translate-y-2');
+            box.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                box.classList.remove('opacity-100', 'translate-y-0');
+                box.classList.add('opacity-0', '-translate-y-2');
+            }, 3000);
         }
 
         setupEvents() {
