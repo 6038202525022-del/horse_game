@@ -94,41 +94,83 @@
 <body class="bg-slate-950 h-screen w-screen flex flex-col justify-between p-2">
 
     <!-- 2P Control Panel (TOP - Rotated for 2 Player Face-to-Face) -->
-    <header class="w-full max-w-5xl mx-auto bg-slate-900 p-2 rounded-xl border-2 border-cyan-500/50 shadow-md player-2p-area flex flex-col gap-1.5">
+    <header class="w-full max-w-5xl mx-auto bg-slate-900 p-1.5 rounded-xl border border-cyan-500/50 shadow-md player-2p-area flex flex-col gap-1">
         <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-xl">🟦</span>
-                <span class="font-black text-sm text-cyan-400">2P PLAYER</span>
-                <div class="bg-slate-950 px-2 py-1 rounded border border-cyan-800 flex items-center gap-1 text-xs">
+            <div class="flex items-center gap-1.5">
+                <span class="text-base">🟦</span>
+                <span class="font-black text-xs text-cyan-400">2P PLAYER</span>
+                <div class="bg-slate-950 px-1.5 py-0.5 rounded border border-cyan-800 flex items-center gap-1 text-[11px]">
                     <span class="text-yellow-400">🪙</span>
                     <span id="p2-medals" class="font-bold text-yellow-400">100</span>枚
                 </div>
             </div>
             
             <div class="flex items-center gap-1">
-                <button id="p2-tab-single" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-cyan-600 text-white">単勝</button>
-                <button id="p2-tab-exacta" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300">馬連</button>
-                <button id="p2-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-2 py-1 rounded text-xs">単位: 1枚</button>
+                <button id="p2-tab-single" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-600 text-white">単勝</button>
+                <button id="p2-tab-exacta" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">馬連</button>
+                <button id="p2-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-1.5 py-0.5 rounded text-[10px]">単位: 1枚</button>
             </div>
 
-            <button id="btn-start-race-p2" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-1.5 rounded-lg text-xs border-b-2 border-emerald-800">
+            <button id="btn-start-race-p2" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-2.5 py-0.5 rounded-lg text-[11px] border-b border-emerald-800">
                 スタート！ 🏇
             </button>
         </div>
 
         <!-- 2P Active Selection & Summary / Carrot Bar -->
-        <div id="p2-bet-bar" class="bg-slate-950/80 p-1.5 rounded border border-cyan-900 min-h-[32px] flex items-center justify-between text-xs overflow-x-auto">
-            <div id="p2-bets-summary" class="flex items-center gap-1 text-slate-400 text-[11px]">2P: 馬を選択してベット</div>
+        <div id="p2-bet-bar" class="bg-slate-950/80 px-1.5 py-0.5 rounded border border-cyan-900 min-h-[24px] flex items-center justify-between text-[10px] overflow-x-auto">
+            <div id="p2-bets-summary" class="flex items-center gap-1 text-slate-400 text-[10px]">2P: 馬を選択してベット</div>
             <div id="p2-racing-carrots" class="hidden flex gap-1"></div>
         </div>
     </header>
 
     <!-- Center Canvas Area -->
-    <main class="w-full max-w-5xl mx-auto flex-1 my-1 relative bg-slate-900 rounded-xl overflow-hidden border-2 border-slate-700 flex flex-col">
+    <main class="w-full max-w-5xl mx-auto flex-1 my-0.5 relative bg-slate-900 rounded-xl overflow-hidden border-2 border-slate-700 flex flex-col">
         <!-- Live Commentary Display Overlay -->
-        <div id="commentary-banner" class="hidden absolute top-2 left-1/2 -translate-x-1/2 z-20 bg-slate-950/90 border-2 border-amber-400 text-amber-300 px-4 py-1.5 rounded-full shadow-lg font-black text-sm md:text-base flex items-center gap-2 backdrop-blur-sm pointer-events-none">
-            <span class="animate-pulse text-red-500">🎙️</span>
+        <div id="commentary-banner" class="hidden absolute top-1 left-1/2 -translate-x-1/2 z-20 bg-slate-950/90 border border-amber-400 text-amber-300 px-3 py-0.5 rounded-full shadow-lg font-black text-xs md:text-sm flex items-center gap-1.5 backdrop-blur-sm pointer-events-none">
+            <span class="animate-pulse text-red-500 text-xs">🎙️</span>
             <span id="commentary-text">ゲートが開いた！一斉にスタート！</span>
+        </div>
+
+        <!-- 起動時：注意書き & プレイヤー名/パスワード入力モーダル -->
+        <div id="login-modal" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl p-5 max-w-md w-full text-center shadow-2xl flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+                <div class="text-xl font-black text-amber-400 flex items-center justify-center gap-2">
+                    <span>⚠️</span> 注意書き <span>⚠️</span>
+                </div>
+                
+                <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800 text-left text-xs text-slate-300 space-y-1.5 leading-relaxed">
+                    <p class="font-bold text-amber-300 text-center">【ご利用にあたっての注意事項】</p>
+                    <p>・本ゲームは模擬競馬アーケードゲームです。実際の金銭の賭博行為とは一切関係ありません。</p>
+                    <p>・ゲーム内のコインや破産（倒産）システムは演出上のエンターテインメント機能です。</p>
+                    <p>・マナーを守り、白熱した2人対戦をお楽しみください！</p>
+                </div>
+
+                <form id="login-form" onsubmit="window.game.submitLogin(event)" class="flex flex-col gap-3 text-left">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">プレイヤー名 (1P / 2P共通または代表名)</label>
+                        <input type="text" id="input-username" required placeholder="例: ブロッコリーマヨネーズ" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1.5">パスワード (半角数字6桁)</label>
+                        <!-- 1文字ずつ四角い枠に分割した入力フィールド -->
+                        <div id="otp-container" class="flex justify-center gap-0.5 my-1">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
+                        </div>
+                    </div>
+
+                    <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center"></div>
+
+                    <button type="submit" class="btn-arcade bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 rounded-lg text-sm shadow-lg mt-1 border-b-2 border-amber-800">
+                        同意してゲームを開始 🏇
+                    </button>
+                </form>
+            </div>
         </div>
 
         <!-- 破産（倒産）モーダルダイアログ -->
@@ -169,25 +211,25 @@
 
         <canvas id="gameCanvas" class="w-full h-full"></canvas>
 
-        <!-- 中央ステータス帯（対面双方向から見られる戦績表示） -->
-        <div id="center-race-history-banner" class="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center gap-1 my-auto">
-            <div class="w-full bg-slate-950/90 border-y-2 border-amber-500/80 backdrop-blur-md px-3 py-1.5 flex flex-col gap-1 shadow-2xl">
+        <!-- 中央ステータス帯（対面双方向から見られる戦績表示 - 余白を最小限に圧縮） -->
+        <div id="center-race-history-banner" class="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center my-auto">
+            <div class="w-full bg-slate-950/90 border-y border-amber-500/80 backdrop-blur-md px-2 py-0.5 flex flex-col gap-0.5 shadow-xl">
                 <!-- 2P向け表示 (180度回転して上向きプレイヤーから正視) -->
-                <div class="flex items-center justify-between w-full text-[11px] font-black text-cyan-300 transform rotate-180 border-b border-cyan-500/30 pb-1">
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <span class="bg-cyan-950 text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-700">🏆 過去5戦 2P視点</span>
+                <div class="flex items-center justify-between w-full text-[10px] font-black text-cyan-300 transform rotate-180 border-b border-cyan-500/20 pb-0.5">
+                    <div class="flex items-center gap-1 shrink-0">
+                        <span class="bg-cyan-950 text-cyan-400 px-1 py-0 rounded border border-cyan-800 text-[9px]">🏆 2P</span>
                     </div>
-                    <div id="center-p2-race-history" class="flex items-center gap-1.5 overflow-x-auto text-[10px] text-slate-300">
+                    <div id="center-p2-race-history" class="flex items-center gap-1 overflow-x-auto text-[9px] text-slate-300">
                         <span class="text-slate-500">直近のレース記録なし</span>
                     </div>
                 </div>
 
                 <!-- 1P向け表示 (通常向きで下向きプレイヤーから正視) -->
-                <div class="flex items-center justify-between w-full text-[11px] font-black text-rose-300 pt-0.5">
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <span class="bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded border border-rose-700">🏆 過去5戦 1P視点</span>
+                <div class="flex items-center justify-between w-full text-[10px] font-black text-rose-300 pt-0.5">
+                    <div class="flex items-center gap-1 shrink-0">
+                        <span class="bg-rose-950 text-rose-400 px-1 py-0 rounded border border-rose-800 text-[9px]">🏆 1P</span>
                     </div>
-                    <div id="center-p1-race-history" class="flex items-center gap-1.5 overflow-x-auto text-[10px] text-slate-300">
+                    <div id="center-p1-race-history" class="flex items-center gap-1 overflow-x-auto text-[9px] text-slate-300">
                         <span class="text-slate-500">直近のレース記録なし</span>
                     </div>
                 </div>
@@ -196,30 +238,30 @@
     </main>
 
     <!-- 1P Control Panel (BOTTOM) -->
-    <footer class="w-full max-w-5xl mx-auto bg-slate-900 p-2 rounded-xl border-2 border-rose-500/50 shadow-md flex flex-col gap-1.5">
+    <footer class="w-full max-w-5xl mx-auto bg-slate-900 p-1.5 rounded-xl border border-rose-500/50 shadow-md flex flex-col gap-1">
         <!-- 1P Active Selection & Summary / Carrot Bar -->
-        <div id="p1-bet-bar" class="bg-slate-950/80 p-1.5 rounded border border-rose-900 min-h-[32px] flex items-center justify-between text-xs overflow-x-auto">
-            <div id="p1-bets-summary" class="flex items-center gap-1 text-slate-400 text-[11px]">1P: 馬を選択してベット</div>
+        <div id="p1-bet-bar" class="bg-slate-950/80 px-1.5 py-0.5 rounded border border-rose-900 min-h-[24px] flex items-center justify-between text-[10px] overflow-x-auto">
+            <div id="p1-bets-summary" class="flex items-center gap-1 text-slate-400 text-[10px]">1P: 馬を選択してベット</div>
             <div id="p1-racing-carrots" class="hidden flex gap-1"></div>
         </div>
 
         <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-xl">🟥</span>
-                <span class="font-black text-sm text-rose-400">1P PLAYER</span>
-                <div class="bg-slate-950 px-2 py-1 rounded border border-rose-800 flex items-center gap-1 text-xs">
+            <div class="flex items-center gap-1.5">
+                <span class="text-base">🟥</span>
+                <span class="font-black text-xs text-rose-400">1P PLAYER</span>
+                <div class="bg-slate-950 px-1.5 py-0.5 rounded border border-rose-800 flex items-center gap-1 text-[11px]">
                     <span class="text-yellow-400">🪙</span>
                     <span id="p1-medals" class="font-bold text-yellow-400">100</span>枚
                 </div>
             </div>
 
             <div class="flex items-center gap-1">
-                <button id="p1-tab-single" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-rose-600 text-white">単勝</button>
-                <button id="p1-tab-exacta" class="btn-arcade px-2 py-1 rounded text-xs font-bold bg-slate-800 text-slate-300">馬連</button>
-                <button id="p1-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-2 py-1 rounded text-xs">単位: 1枚</button>
+                <button id="p1-tab-single" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white">単勝</button>
+                <button id="p1-tab-exacta" class="btn-arcade px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">馬連</button>
+                <button id="p1-btn-bet-unit" class="btn-arcade bg-amber-500 text-slate-900 font-black px-1.5 py-0.5 rounded text-[10px]">単位: 1枚</button>
             </div>
 
-            <button id="btn-start-race" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-4 py-1.5 rounded-lg text-sm border-b-2 border-emerald-800">
+            <button id="btn-start-race" class="btn-arcade bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-0.5 rounded-lg text-xs border-b border-emerald-800">
                 レーススタート！ 🏇
             </button>
         </div>
@@ -316,7 +358,8 @@
             this.p1 = { medals: 100, debt: 0, betAmount: 1, mode: "SINGLE", singleBets: {}, exactaBets: {}, exactaSel: null, carrots: [0,0,0,0,0,0] };
             this.p2 = { medals: 100, debt: 0, betAmount: 1, mode: "SINGLE", singleBets: {}, exactaBets: {}, exactaSel: null, carrots: [0,0,0,0,0,0] };
 
-            this.state = "BETTING";
+            this.state = "LOGIN"; // 起動直後はログイン/注意書き状態
+            this.username = "";
             this.bankruptPlayer = null; // 倒産状態のプレイヤー
             this.horses = [];
             this.particles = [];
@@ -350,7 +393,65 @@
             requestAnimationFrame((t) => this.loop(t));
         }
 
+        submitLogin(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('input-username');
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const loginError = document.getElementById('login-error');
+
+            const valName = usernameInput ? usernameInput.value.trim() : '';
+            // 6個の四角枠から入力文字を連結
+            let valPass = '';
+            otpInputs.forEach(input => {
+                valPass += input.value;
+            });
+
+            if (!valName || valPass.length < 6) {
+                if (loginError) {
+                    loginError.textContent = "名前と6桁の数字パスワードを入力してください。";
+                    loginError.classList.remove('hidden');
+                }
+                return;
+            }
+
+            // パスワード判定を「6桁の整数」に限定
+            if (!/^\d{6}$/.test(valPass)) {
+                if (loginError) {
+                    loginError.textContent = "パスワードは6桁の数字(例: 123456)で入力してください。";
+                    loginError.classList.remove('hidden');
+                }
+                return;
+            }
+
+            this.username = valName;
+            
+            // 入力画面を閉じてベット画面へ移行
+            const modal = document.getElementById('login-modal');
+            if (modal) modal.classList.add('hidden');
+
+            playSound('coin');
+            this.state = "BETTING";
+            this.updateBetUI();
+        }
+
         setupEvents() {
+            // 1文字ずつ四角の枠に入力した時のフォーカス自動移動制御
+            const otpInputs = document.querySelectorAll('.otp-input');
+            otpInputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    if (val.length === 1 && index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !input.value && index > 0) {
+                        otpInputs[index - 1].focus();
+                    }
+                });
+            });
+
             // Canvas Click Event (Select bets / Dismiss result screen)
             this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
 
@@ -1743,7 +1844,11 @@
         loop() {
             this.animFrame++;
             
-            if (this.state === "BETTING") {
+            if (this.state === "LOGIN") {
+                // LOGIN状態時はキャンバス背景を暗く描画
+                this.ctx.fillStyle = '#0f172a';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            } else if (this.state === "BETTING") {
                 this.drawBettingScreen();
             } else if (this.state === "RACING") {
                 this.updateRace();
