@@ -181,19 +181,24 @@
                     <span>🟦</span> 2P プレイヤー設定 <span>🏇</span>
                 </div>
                 
-                <p class="text-xs text-slate-300">2Pプレイヤーのお名前を入力してください。</p>
+                <p class="text-xs text-slate-300">2Pプレイヤーのお名前を入力してください。（スキップも可能です）</p>
 
                 <form id="p2-name-form" onsubmit="window.game.submit2PName(event)" class="flex flex-col gap-3 text-left">
                     <div>
                         <label class="block text-xs font-bold text-cyan-300 mb-1">2P プレイヤー名</label>
-                        <input type="text" id="input-p2-username" required placeholder="例: アスパラガス" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                        <input type="text" id="input-p2-username" placeholder="例: アスパラガス (空欄でスキップ可能)" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-lg px-3 py-2 text-xs text-white outline-none">
                     </div>
 
                     <div id="p2-name-error" class="hidden text-red-400 text-xs font-bold text-center"></div>
 
-                    <button type="submit" class="btn-arcade bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-black py-2.5 rounded-lg text-sm shadow-lg mt-1 border-b-2 border-cyan-800">
-                        ゲームを開始する 🏇
-                    </button>
+                    <div class="flex gap-2 mt-1">
+                        <button type="button" onclick="window.game.skip2PName()" class="w-1/3 btn-arcade bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-lg text-xs border border-slate-600">
+                            スキップ ⏩
+                        </button>
+                        <button type="submit" class="w-2/3 btn-arcade bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-black py-2.5 rounded-lg text-sm shadow-lg border-b-2 border-cyan-800">
+                            ゲームを開始する 🏇
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -272,11 +277,11 @@
 
         <div class="flex justify-between items-center">
             <div class="flex items-center gap-1.5">
-                <span class="text-base">🟦</span>
-                <span id="p2-display-name" class="font-black text-xs text-cyan-400 truncate max-w-[120px]">2P PLAYER</span>
-                <div class="bg-slate-950 px-1.5 py-0.5 rounded border border-cyan-800 flex items-center gap-1 text-[11px]">
+                <span class="text-base">🟥</span>
+                <span id="p1-display-name" class="font-black text-xs text-rose-400 truncate max-w-[120px]">1P PLAYER</span>
+                <div class="bg-slate-950 px-1.5 py-0.5 rounded border border-rose-800 flex items-center gap-1 text-[11px]">
                     <span class="text-yellow-400">🪙</span>
-                    <span id="p2-medals" class="font-bold text-yellow-400">100</span>枚
+                    <span id="p1-medals" class="font-bold text-yellow-400">100</span>枚
                 </div>
             </div>
 
@@ -451,7 +456,7 @@
             this.username = valName;
             this.p1.name = valName; // 1Pの名前を代入
             
-            // 画面上の1P名表示を更新
+            // 画面上（下部パネル）の1P名表示を更新
             const p1NameLabel = document.getElementById('p1-display-name');
             if (p1NameLabel) {
                 p1NameLabel.textContent = valName;
@@ -474,32 +479,38 @@
         }
 
         submit2PName(e) {
-            e.preventDefault();
+            if (e) e.preventDefault();
             const p2UsernameInput = document.getElementById('input-p2-username');
-            const p2NameError = document.getElementById('p2-name-error');
 
             const valP2Name = p2UsernameInput ? p2UsernameInput.value.trim() : '';
 
             if (!valP2Name) {
-                if (p2NameError) {
-                    p2NameError.textContent = "2Pのお名前を入力してください。";
-                    p2NameError.classList.remove('hidden');
-                }
+                // 名前未入力の場合はデフォルト名でスキップ処理
+                this.skip2PName();
                 return;
             }
 
-            this.p2.name = valP2Name; // 2Pの名前を代入
+            this.apply2PName(valP2Name);
+        }
 
-            // 画面上の2P名表示を更新
-            const p2NameLabel = document.getElementById('p2-display-name');
+        skip2PName() {
+            // スキップされた場合はデフォルト名 "2P PLAYER" を代入
+            this.apply2PName("2P PLAYER");
+        }
+
+        apply2PName(name) {
+            this.p2.name = name; // 2Pの名前を代入
+
+            // 画面上（上部パネル）の2P名表示を更新
+            const p2NameLabel = document.querySelector('header .text-cyan-400');
             if (p2NameLabel) {
-                p2NameLabel.textContent = valP2Name;
+                p2NameLabel.textContent = name;
             }
 
             // 中央帯の2Pラベルも更新
             const centerP2Label = document.querySelector('#center-race-history-banner .text-cyan-400');
             if (centerP2Label) {
-                centerP2Label.textContent = `🏆 ${valP2Name}`;
+                centerP2Label.textContent = `🏆 ${name}`;
             }
 
             // 2Pモーダルを閉じてベット画面へ移行
@@ -1699,12 +1710,21 @@
                 const cards = [];
 
                 this.horses.forEach((horse, idx) => {
+                    // 2P（反転時）は左上から6,5,4 / 3,2,1 となるようインデックス計算を調整
+                    let displayIdx = idx;
+                    if (isRotated) {
+                        const row = Math.floor(idx / 3);
+                        const col = idx % 3;
+                        displayIdx = (1 - row) * 3 + (2 - col);
+                    }
+
+                    const cardHorse = this.horses[displayIdx];
                     const row = Math.floor(idx / 3);
                     const col = idx % 3;
                     const x = startX + col * (cardW + gap);
                     const y = startY + row * (cardH + gap);
 
-                    cards.push({ index: idx, x, y, width: cardW, height: cardH });
+                    cards.push({ index: displayIdx, x, y, width: cardW, height: cardH });
 
                     ctx.save();
                     if (isRotated) {
@@ -1713,53 +1733,46 @@
                         ctx.translate(-(x + cardW / 2), -(y + cardH / 2));
                     }
 
-                    let isSelected = false;
-                    if (player.mode === "EXACTA" && player.exactaSel === idx) isSelected = true;
-
-                    ctx.fillStyle = isSelected ? '#0284c7' : '#1e293b';
-                    ctx.strokeStyle = isSelected ? '#38bdf8' : '#334155';
-                    ctx.lineWidth = isSelected ? 3 : 1.5;
+                    // カードの背景枠描画
+                    ctx.fillStyle = player.exactaSel === displayIdx ? 'rgba(234, 179, 8, 0.25)' : 'rgba(30, 41, 59, 0.9)';
+                    ctx.strokeStyle = player.exactaSel === displayIdx ? '#eab308' : cardHorse.color;
+                    ctx.lineWidth = player.exactaSel === displayIdx ? 3 : 2;
 
                     ctx.beginPath();
                     ctx.roundRect(x, y, cardW, cardH, 8);
                     ctx.fill();
                     ctx.stroke();
 
-                    ctx.fillStyle = horse.color;
-                    ctx.beginPath();
-                    ctx.arc(x + 18, y + 18, 10, 0, Math.PI * 2);
-                    ctx.fill();
+                    // 馬番号・名前
+                    ctx.fillStyle = cardHorse.color;
+                    ctx.font = '900 13px sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(`${cardHorse.id}.${cardHorse.name.slice(0, 5)}`, x + 8, y + 18);
 
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = '900 11px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(horse.id, x + 18, y + 18);
+                    // 脚質・オッズ
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '700 10px sans-serif';
+                    ctx.fillText(`[${cardHorse.styleName}]`, x + 8, y + 33);
+
+                    ctx.fillStyle = '#facc15';
+                    ctx.font = '900 12px sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(`×${cardHorse.odds}`, x + cardW - 8, y + 33);
+
+                    // ベット数表示
+                    const singleBet = player.singleBets[cardHorse.id] || 0;
+                    let exactaBetCount = 0;
+                    for (let key in player.exactaBets) {
+                        if (key.includes(String(cardHorse.id))) {
+                            exactaBetCount += player.exactaBets[key];
+                        }
+                    }
 
                     ctx.fillStyle = '#f8fafc';
-                    ctx.font = '700 12px sans-serif';
+                    ctx.font = '700 10px sans-serif';
                     ctx.textAlign = 'left';
-                    ctx.fillText(horse.name, x + 34, y + 15);
-
-                    ctx.fillStyle = '#f59e0b';
-                    ctx.font = '900 11px sans-serif';
-                    ctx.fillText(`オッズ: ${horse.odds}倍`, x + 34, y + 28);
-
-                    ctx.fillStyle = '#94a3b8';
-                    ctx.font = '600 9px sans-serif';
-                    ctx.fillText(`[${horse.styleName}] ${horse.desc.slice(0, 9)}...`, x + 8, y + 46);
-
-                    const bSingle = player.singleBets[horse.id] || 0;
-                    if (bSingle > 0) {
-                        ctx.fillStyle = '#ef4444';
-                        ctx.beginPath();
-                        ctx.arc(x + cardW - 12, y + 14, 9, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = '900 9px sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(bSingle, x + cardW - 12, y + 14);
-                    }
+                    ctx.fillText(`単勝: ${singleBet}枚`, x + 8, y + 50);
+                    ctx.fillText(`馬連絡み: ${exactaBetCount}枚`, x + 8, y + 64);
 
                     ctx.restore();
                 });
@@ -1767,8 +1780,9 @@
                 return cards;
             };
 
-            this.p2Cards = drawPlayerBetCards(this.p2, 40, true);
-            this.p1Cards = drawPlayerBetCards(this.p1, h - 195, false);
+            // 2P (上部) & 1P (下部) のカード群を描画
+            this.p2Cards = drawPlayerBetCards(this.p2, 45, true);
+            this.p1Cards = drawPlayerBetCards(this.p1, h - 180, false);
         }
 
         drawResultScreen() {
@@ -1776,230 +1790,120 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
             ctx.fillRect(0, 0, w, h);
 
-            ctx.save();
             ctx.fillStyle = '#facc15';
-            ctx.font = '900 32px sans-serif';
+            ctx.font = '900 22px sans-serif';
             ctx.textAlign = 'center';
-            ctx.shadowColor = '#f59e0b';
-            ctx.shadowBlur = 15;
-            ctx.fillText("🏁 ゴール！！ 🏁", w / 2, 50);
-            ctx.restore();
+            ctx.fillText("🏆 レース結果 🏆", w / 2, h / 2 - 90);
 
-            const podiumW = 110;
-            const startX = (w - (podiumW * 3 + 20)) / 2;
+            if (this.rankings.length >= 3) {
+                const ranks = [
+                    { label: "🥇 1着", horse: this.rankings[0] },
+                    { label: "🥈 2着", horse: this.rankings[1] },
+                    { label: "🥉 3着", horse: this.rankings[2] }
+                ];
 
-            this.rankings.slice(0, 3).forEach((hItem, idx) => {
-                const x = startX + idx * (podiumW + 10);
-                const y = 75;
+                ranks.forEach((item, idx) => {
+                    const y = h / 2 - 40 + idx * 30;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '700 14px sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(`${item.label}:`, w / 2 - 120, y);
 
-                ctx.fillStyle = '#1e293b';
-                ctx.strokeStyle = idx === 0 ? '#f59e0b' : '#64748b';
-                ctx.lineWidth = idx === 0 ? 3 : 1;
-                ctx.beginPath();
-                ctx.roundRect(x, y, podiumW, 85, 10);
-                ctx.fill();
-                ctx.stroke();
+                    ctx.fillStyle = item.horse.color;
+                    ctx.font = '900 16px sans-serif';
+                    ctx.fillText(`${item.horse.id}番 ${item.horse.name}`, w / 2 - 50, y);
 
-                ctx.fillStyle = idx === 0 ? '#f59e0b' : (idx === 1 ? '#94a3b8' : '#b45309');
-                ctx.font = '900 15px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${idx + 1}着`, x + podiumW / 2, y + 22);
+                    ctx.fillStyle = '#facc15';
+                    ctx.font = '700 12px sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(`(オッズ ×${item.horse.odds})`, w / 2 + 130, y);
+                });
+            }
 
-                ctx.fillStyle = hItem.color;
-                ctx.beginPath();
-                ctx.arc(x + podiumW / 2, y + 45, 11, 0, Math.PI * 2);
-                ctx.fill();
+            // 獲得メダル結果表示
+            const p1Name = this.p1.name || "1P";
+            const p2Name = this.p2.name || "2P";
+            
+            ctx.font = '900 13px sans-serif';
+            ctx.textAlign = 'center';
+            
+            ctx.fillStyle = '#f43f5e';
+            ctx.fillText(`${p1Name}: +${this.p1WonMedalsThisRace}枚 獲得！`, w / 2, h / 2 + 65);
 
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '900 11px sans-serif';
-                ctx.fillText(hItem.id, x + podiumW / 2, y + 45);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillText(`${p2Name}: +${this.p2WonMedalsThisRace}枚 獲得！`, w / 2, h / 2 + 85);
 
-                ctx.fillStyle = '#f8fafc';
-                ctx.font = '700 11px sans-serif';
-                ctx.fillText(hItem.name, x + podiumW / 2, y + 70);
-            });
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 12px sans-serif';
+            ctx.fillText("画面をタップして次のレースへ", w / 2, h / 2 + 125);
+        }
 
-            // 1P & 2P それぞれの獲得メダル結果表示（賭けた枚数と獲得枚数を隣同士の箱に配置）
-            const drawPlayerPayoutSummary = (playerLabel, betAmount, wonAmount, color, isRotated, posX, posY) => {
-                ctx.save();
-                ctx.translate(posX, posY);
-                if (isRotated) ctx.rotate(Math.PI);
-
-                const cardW = 110;
-                const cardH = 50;
-                const gap = 10;
-                const totalWidth = cardW * 2 + gap;
-
-                // 全体タイトル
-                ctx.fillStyle = color;
-                ctx.font = '900 13px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${playerLabel} レース結果`, 0, -32);
-
-                // 左の箱：賭けた枚数
-                const leftX = -totalWidth / 2;
-                ctx.fillStyle = '#0f172a';
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.roundRect(leftX, -22, cardW, cardH, 8);
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.fillStyle = '#94a3b8';
-                ctx.font = '700 10px sans-serif';
-                ctx.fillText('賭けた枚数', leftX + cardW / 2, -6);
-                ctx.fillStyle = '#f8fafc';
-                ctx.font = '900 14px sans-serif';
-                ctx.fillText(`${betAmount || 0} 枚`, leftX + cardW / 2, 14);
-
-                // 右の箱：獲得枚数
-                const rightX = leftX + cardW + gap;
-                ctx.fillStyle = '#0f172a';
-                ctx.strokeStyle = wonAmount > 0 ? '#f59e0b' : color;
-                ctx.lineWidth = wonAmount > 0 ? 2 : 1.5;
-                ctx.beginPath();
-                ctx.roundRect(rightX, -22, cardW, cardH, 8);
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.fillStyle = wonAmount > 0 ? '#facc15' : '#94a3b8';
-                ctx.font = '700 10px sans-serif';
-                ctx.fillText('獲得枚数', rightX + cardW / 2, -6);
-                ctx.fillStyle = wonAmount > 0 ? '#f59e0b' : '#64748b';
-                ctx.font = '900 14px sans-serif';
-                ctx.fillText(wonAmount > 0 ? `+${wonAmount} 枚` : '0 枚', rightX + cardW / 2, 14);
-
-                ctx.restore();
-            };
-
-            // 2P (上側・反転表示用)
-            drawPlayerPayoutSummary(this.p2.name || "2P", this.p2BetMedalsThisRace, this.p2WonMedalsThisRace, '#38bdf8', true, w * 0.28, 210);
-            // 1P (下側・正位表示)
-            drawPlayerPayoutSummary(this.p1.name || "1P", this.p1BetMedalsThisRace, this.p1WonMedalsThisRace, '#f43f5e', false, w * 0.72, h - 55);
-
-            // コインの噴射描画
+        updateCoinParticles() {
+            const ctx = this.ctx;
             for (let i = this.coinParticles.length - 1; i >= 0; i--) {
-                const c = this.coinParticles[i];
-                c.x += c.vx;
-                c.y += c.vy;
-                c.vy += c.gravity;
-                c.rotation += c.vRot;
-                c.life--;
+                const p = this.coinParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.rotation += p.vRot;
+                p.life--;
 
                 ctx.save();
-                ctx.translate(c.x, c.y);
-                ctx.rotate(c.rotation);
-                
-                // コイン外枠
-                ctx.fillStyle = c.playerTag === "2P" ? '#38bdf8' : '#eab308';
-                ctx.strokeStyle = c.playerTag === "2P" ? '#bae6fd' : '#fef08a';
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+
+                ctx.fillStyle = '#eab308';
+                ctx.strokeStyle = '#fef08a';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.ellipse(0, 0, c.size, c.size * 0.7, 0, 0, Math.PI * 2);
+                ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
 
-                // コインマーク
-                ctx.fillStyle = '#0f172a';
-                ctx.font = '900 10px sans-serif';
+                ctx.fillStyle = '#78350f';
+                ctx.font = `900 ${Math.floor(p.size * 0.5)}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText('🪙', 0, 0);
 
                 ctx.restore();
 
-                if (c.y > h + 60 || c.y < -60 || c.life <= 0) {
+                if (p.life <= 0) {
                     this.coinParticles.splice(i, 1);
                 }
             }
-
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '700 13px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText("画面をタップして次のレースへ！", w / 2, h / 2 + 10);
         }
 
-        loop() {
+        loop(time) {
             this.animFrame++;
-            
-            if (this.state === "LOGIN") {
-                // LOGIN状態時はキャンバス背景を暗く描画
-                this.ctx.fillStyle = '#0f172a';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            } else if (this.state === "BETTING") {
-                this.drawBettingScreen();
-            } else if (this.state === "RACING") {
+
+            if (this.state === "RACING") {
                 this.updateRace();
-
-                // スタートしたて（進捗 0% 〜 4%）のみズームインしてスタートダッシュ/出遅れを見やすくする
-                const leader = [...this.horses].sort((a,b) => b.progress - a.progress)[0];
-                const p = leader ? leader.progress : 0;
-                
-                let scale = 1.0;
-                let focusX = this.canvas.width / 2;
-                let focusY = this.canvas.height / 2;
-
-                if (p < 0.04) {
-                    // スタートした直後（0%~4%）だけ 1.6倍にクローズアップ！
-                    scale = 1.6;
-                } else if (p >= 0.04 && p < 0.08) {
-                    // 4%~8%で速やかに標準画面（1.0倍）へ引き戻す
-                    const ratio = (p - 0.04) / 0.04;
-                    scale = 1.6 - (0.6 * ratio);
-                }
-
-                if (scale > 1.0 && leader) {
-                    // 先頭・出遅れ群のいるスタート地点近辺にフォーカス
-                    focusX = leader.x;
-                    focusY = leader.y;
-                }
-
-                this.ctx.save();
-                if (scale > 1.0) {
-                    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-                    this.ctx.scale(scale, scale);
-                    this.ctx.translate(-focusX, -focusY);
-                }
-
-                this.drawTrack();
-
-                // 粒子の描画・更新
-                for (let i = this.particles.length - 1; i >= 0; i--) {
-                    const pItem = this.particles[i];
-                    pItem.x += pItem.vx;
-                    pItem.y += pItem.vy;
-                    pItem.life--;
-
-                    this.ctx.fillStyle = pItem.color;
-                    this.ctx.beginPath();
-                    this.ctx.arc(pItem.x, pItem.y, 3, 0, Math.PI * 2);
-                    this.ctx.fill();
-
-                    if (pItem.life <= 0) {
-                        this.particles.splice(i, 1);
-                    }
-                }
-
-                this.horses.forEach(h => this.drawHorseIllustration(this.ctx, h));
-
-                this.ctx.restore(); // カメラ変形状態をリセット
-            } else if (this.state === "RESULT") {
-                this.drawTrack();
-                this.horses.forEach(h => this.drawHorseIllustration(this.ctx, h));
-                this.drawResultScreen();
             }
 
-            requestAnimationFrame(() => this.loop());
+            if (this.state === "BETTING") {
+                this.drawBettingScreen();
+            } else {
+                this.drawTrack();
+                this.horses.forEach(h => this.drawHorseIllustration(this.ctx, h));
+
+                if (this.state === "RESULT") {
+                    this.drawResultScreen();
+                }
+            }
+
+            this.updateCoinParticles();
+
+            requestAnimationFrame((t) => this.loop(t));
         }
     }
 
-    window.addEventListener('load', () => {
+    window.onload = () => {
         window.game = new HorseRacingGame();
-    });
+    };
     </script>
 </body>
 </html>
