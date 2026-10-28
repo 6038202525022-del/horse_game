@@ -427,12 +427,11 @@
     <script>
     // 馬のデータ定義定数
     const HORSE_NAME_POOL = [
-        "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
+       "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
         "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー","タッカルビカンタ","ナリタブライアン",
         "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ",
         "アーモンドアイ", "ウオッカ","サルトシッソク","ヒヨシメガネ","サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
     ];
-
     const HORSE_TYPES = [
         { styleName: "逃げ", typeKey: "speed", baseSpeed: 1.15, spurt: 0.95, desc: "序盤から飛ばして逃げ切る！" },
         { styleName: "先行", typeKey: "steady", baseSpeed: 1.08, spurt: 1.02, desc: "好位をキープし安定した走り。" },
@@ -590,7 +589,9 @@
             // ★ セーブデータの読み込み（1P名、パスワード、2P名から検索）
             await this.tryLoadSavedData();
 
+            // 馬券購入画面に正常に遷移するよう初期設定とUI更新を呼び出し
             this.state = "BETTING";
+            this.initHorses();
             this.updateBetUI();
         }
 
@@ -2029,7 +2030,8 @@
                 this.updateRace();
             }
 
-            if (this.state === "BETTING") {
+            // BETTING状態、およびログインモーダルが表示中（LOGIN状態）のときは馬券選択画面を描画
+            if (this.state === "BETTING" || this.state === "LOGIN") {
                 this.drawBettingScreen();
             } else {
                 this.drawTrack();
