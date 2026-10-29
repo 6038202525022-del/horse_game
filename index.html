@@ -195,11 +195,6 @@
             <span id="commentary-text">ゲートが開いた！一斉にスタート！</span>
         </div>
 
-        <!-- システムメッセージ表示用通知ポップアップ -->
-        <div id="message-box" class="hidden absolute top-10 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-950 px-4 py-2 rounded-xl shadow-2xl font-black text-xs md:text-sm border-2 border-amber-300 flex items-center gap-2 text-center transition-all duration-300">
-            <span id="message-text">メッセージ</span>
-        </div>
-
         <!-- 起動時：注意書き & プレイヤー名/パスワード入力モーダル -->
         <div id="login-modal" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
             <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl p-5 max-w-md w-full text-center shadow-2xl flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
@@ -257,6 +252,11 @@
                     </button>
                 </form>
             </div>
+        </div>
+
+        <!-- 汎用メッセージ通知ポップアップ -->
+        <div id="toast-message" class="hidden fixed top-12 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border-2 border-amber-400 text-amber-200 px-6 py-3 rounded-2xl shadow-2xl text-center text-xs font-bold flex items-center gap-2 backdrop-blur-md animate-bounce">
+            <span id="toast-text">メッセージ</span>
         </div>
 
         <!-- ステップ2: 2Pの名前入力モーダル -->
@@ -447,7 +447,7 @@
     <script>
     // 馬のデータ定義定数
     const HORSE_NAME_POOL = [
-         "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
+       "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
         "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー","タッカルビカンタ","ナリタブライアン",
         "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ",
         "アーモンドアイ", "ウオッカ","サルトシッソク","ヒヨシメガネ","サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
@@ -537,30 +537,24 @@
                 finalPass = newPass;
             } else {
                 if (loginError) {
-                    loginError.textContent = "新規作成用か復元用のどちらかに6桁の数字パスワードを入力してください。";
+                    loginError.textContent = "パスワード（半角数字6桁）を正確に入力してください。";
                     loginError.classList.remove('hidden');
                 }
                 return;
             }
 
-            if (!valName) {
-                if (loginError) {
-                    loginError.textContent = "1Pのプレイヤー名を入力してください。";
-                    loginError.classList.remove('hidden');
-                }
-                return;
-            }
+            if (loginError) loginError.classList.add('hidden');
 
-            this.username = valName;
             this.password = finalPass;
-            this.isRestoreMode = isRestore; // 復元用か新規かを保持
-            this.p1.name = valName;
+            this.isRestoreMode = isRestore;
+            this.p1Name = valName || "1P PLAYER";
+            this.p1.name = this.p1Name;
 
             const p1NameLabel = document.getElementById('p1-display-name');
-            if (p1NameLabel) p1NameLabel.textContent = valName;
+            if (p1NameLabel) p1NameLabel.textContent = this.p1Name;
 
             const centerP1Label = document.querySelector('#center-race-history-banner .text-rose-400');
-            if (centerP1Label) centerP1Label.textContent = `🏆 ${valName}`;
+            if (centerP1Label) centerP1Label.textContent = `🏆 ${this.p1Name}`;
 
             const loginModal = document.getElementById('login-modal');
             if (loginModal) loginModal.classList.add('hidden');
@@ -572,24 +566,24 @@
         }
 
         submit2PName(e) {
-            if (e) e.preventDefault();
-            const input2P = document.getElementById('input-p2-username');
-            const val = input2P ? input2P.value.trim() : '';
-            this.apply2PName(val || "2P PLAYER");
+            e.preventDefault();
+            const input = document.getElementById('input-p2-username');
+            const name = (input && input.value.trim()) ? input.value.trim() : '2P PLAYER';
+            this.apply2PName(name);
         }
 
         skip2PName() {
-            this.apply2PName("2P PLAYER");
+            this.apply2PName('2P PLAYER');
         }
 
         showMessageBox(msg) {
-            const box = document.getElementById('message-box');
-            const text = document.getElementById('message-text');
-            if (box && text) {
+            const toast = document.getElementById('toast-message');
+            const text = document.getElementById('toast-text');
+            if (toast && text) {
                 text.textContent = msg;
-                box.classList.remove('hidden');
+                toast.classList.remove('hidden');
                 setTimeout(() => {
-                    box.classList.add('hidden');
+                    toast.classList.add('hidden');
                 }, 3500);
             }
         }
@@ -612,7 +606,7 @@
             if (this.isRestoreMode) {
                 await this.tryLoadSavedData();
             } else {
-                this.showMessageBox("✨ 新規スタート！\nパスワード: " + this.password + " でセーブ可能です。");
+                this.showMessageBox("✨ 新規スタート！\nパスワード: " + this.password + " でいつでもセーブ可能です。");
             }
 
             this.state = "BETTING";
@@ -638,16 +632,16 @@
                             this.p2.debt = savedData.p2Debt ?? 0;
                             if (savedData.raceHistory) this.raceHistory = savedData.raceHistory;
 
-                            this.showMessageBox("📂 復元成功！前回の続きからスタートします。");
+                            this.showMessageBox("📂 セーブデータを復元しました！（有効期限: 5日間）");
                             playSound('win');
                         }
                     } else {
-                        this.showMessageBox("⚠️ 該当するセーブデータが見つからなかったため、新規データでスタートします。");
+                        this.showMessageBox("⚠️ 該当するセーブデータが見つからなかったため、新規スタートします。");
                     }
                 }
             } catch (err) {
                 console.error("Failed to load save data:", err);
-                this.showMessageBox("❌ 復元エラーが発生しました。新規でスタートします。");
+                this.showMessageBox("❌ 復元エラーが発生しました。新規データで開始します。");
             }
         }
 
