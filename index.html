@@ -208,6 +208,7 @@
                     <p>・ゲーム内のコインや破産（倒産）システムは演出上のエンターテインメント機能です。</p>
                     <p>・マナーを守り、白熱した2人対戦をお楽しみください！</p>
                     <p>・実在の人物と馬の名前は一切関係ありません</p>
+
                 </div>
 
                 <!-- ステップ1: 1Pの名前とパスワードを入力 -->
@@ -427,11 +428,12 @@
     <script>
     // 馬のデータ定義定数
     const HORSE_NAME_POOL = [
-       "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
+        "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
         "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー","タッカルビカンタ","ナリタブライアン",
         "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ",
         "アーモンドアイ", "ウオッカ","サルトシッソク","ヒヨシメガネ","サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
     ];
+
     const HORSE_TYPES = [
         { styleName: "逃げ", typeKey: "speed", baseSpeed: 1.15, spurt: 0.95, desc: "序盤から飛ばして逃げ切る！" },
         { styleName: "先行", typeKey: "steady", baseSpeed: 1.08, spurt: 1.02, desc: "好位をキープし安定した走り。" },
@@ -618,6 +620,8 @@
                             this.showMessageBox("📂 以前のセーブデータを復元しました！");
                             playSound('win');
                         }
+                    } else {
+                        this.showMessageBox("✨ 新規スタート！（同じパスワードでセーブ可能です）");
                     }
                 }
             } catch (err) {
@@ -1956,16 +1960,16 @@
                     ctx.fillStyle = '#ffffff';
                     ctx.font = '700 14px sans-serif';
                     ctx.textAlign = 'left';
-                    ctx.fillText(`${item.label}:`, w / 2 - 120, y);
+                    ctx.fillText(`${item.label}:`, w / 2 - 140, y);
 
                     ctx.fillStyle = item.horse.color;
                     ctx.font = '900 16px sans-serif';
-                    ctx.fillText(`${item.horse.id}番 ${item.horse.name}`, w / 2 - 50, y);
+                    ctx.fillText(`${item.horse.id}番 ${item.horse.name}`, w / 2 - 70, y);
 
                     ctx.fillStyle = '#facc15';
                     ctx.font = '700 12px sans-serif';
                     ctx.textAlign = 'right';
-                    ctx.fillText(`(オッズ ×${item.horse.odds})`, w / 2 + 130, y);
+                    ctx.fillText(`(オッズ ×${item.horse.odds})`, w / 2 + 150, y);
                 });
             }
 
