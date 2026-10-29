@@ -90,6 +90,38 @@
             letter-spacing: 0.2em;
         }
     </style>
+    <!-- Gemini AI テクスチャ生成用 API -->
+    <script>
+        window.generateHorseTexture = async function(horseName, coat, faceMark) {
+            const prompt = `A detailed side view vector-style icon of a racehorse named "${horseName}", coat color: ${coat}, with ${faceMark} face marking, realistic proportions, high resolution, smooth background.`;
+            const apiKey = ""; // Canvas runtime dynamic API key
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseModalities: ['IMAGE']
+                        }
+                    })
+                });
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                if (base64Data) {
+                    const img = new Image();
+                    img.src = `data:image/png;base64,${base64Data}`;
+                    await new Promise((resolve) => { img.onload = resolve; });
+                    return img;
+                }
+            } catch (e) {
+                console.warn("Gemini Image Generation fallback to Canvas Vector Drawing:", e);
+            }
+            return null;
+        };
+    </script>
     <!-- Firebase SDK Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -208,7 +240,6 @@
                     <p>・ゲーム内のコインや破産（倒産）システムは演出上のエンターテインメント機能です。</p>
                     <p>・マナーを守り、白熱した2人対戦をお楽しみください！</p>
                     <p>・実在の人物と馬の名前は一切関係ありません</p>
-
                 </div>
 
                 <!-- ステップ1: 1Pの名前とパスワードを入力 -->
@@ -446,12 +477,32 @@
 
     <!-- Game Logic -->
     <script>
-    // 馬のデータ定義定数
+    // 枠色カラー定義（1番〜6番指定カラー）
+    const FRAME_COLORS = [
+        { id: 1, color: "#f97316", name: "オレンジ", bgClass: "rgba(249, 115, 22, 0.25)" },
+        { id: 2, color: "#38bdf8", name: "水色", bgClass: "rgba(56, 189, 248, 0.25)" },
+        { id: 3, color: "#ec4899", name: "ピンク", bgClass: "rgba(236, 72, 153, 0.25)" },
+        { id: 4, color: "#eab308", name: "黄色", bgClass: "rgba(234, 179, 8, 0.25)" },
+        { id: 5, color: "#a855f7", name: "紫", bgClass: "rgba(168, 85, 247, 0.25)" },
+        { id: 6, color: "#10b981", name: "エメラルド", bgClass: "rgba(16, 185, 129, 0.25)" }
+    ];
+
+    // 馬の名前リスト（ここに追加・編集することで簡単に新しい馬を増やせます）
     const HORSE_NAME_POOL = [
-       "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
-        "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー","タッカルビカンタ","ナリタブライアン",
-        "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ","ミギメダイボウソウ","サルトマヨラー",
-        "アーモンドアイ", "ウオッカ","サルトシッソク","ヒヨシメガネ","サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
+        "サンダーボルト", "ディープスター", "ゴールドシップ", "アデハデマジカ", "サイレンススズカ",
+        "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー", "タッカルビカンタ", "ナリタブライアン",
+        "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ", "ミギメダイボウソウ", "サルトマヨラー", "ナニシテルガヨン",
+        "アーモンドアイ", "ウオッカ", "サルトシッソク", "ヒヨシメガネ", "サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
+    ];
+
+    // 馬の毛色・デザインパターン定義（馬名からランダム/ハッシュで割り当て）
+    const COAT_VARIATIONS = [
+        { coat: "黒鹿毛", maneColor: "#110e0b", faceMark: "star", socks: [true, false, true, false] },
+        { coat: "芦毛", maneColor: "#9ca3af", faceMark: "blaze", socks: [true, true, true, true] },
+        { coat: "鹿毛", maneColor: "#1e110a", faceMark: "stripe", socks: [true, true, false, false] },
+        { coat: "栗毛", maneColor: "#f59e0b", faceMark: "blaze", socks: [true, true, true, true] },
+        { coat: "白毛", maneColor: "#f1f5f9", faceMark: "none", socks: [false, false, false, false] },
+        { coat: "青毛", maneColor: "#0a0a0a", faceMark: "star", socks: [false, true, false, true] }
     ];
 
     const HORSE_TYPES = [
@@ -463,8 +514,12 @@
         { styleName: "ムラ気", typeKey: "yokozuna", baseSpeed: 1.05, spurt: 1.10, desc: "調子の波が激しい穴馬！" }
     ];
 
-    const HORSE_BODY_COLORS = [
-        "#f97316", "#3b82f6", "#ec4899", "#8b5cf6", "#10b981", "#eab308"
+    // 体型バリエーション（デブ・ちび・痩せ・普通）
+    const BODY_TYPES = [
+        { key: "fat", name: "デブ", scaleX: 1.25, scaleY: 1.35, bellyWidth: 16, desc: "太めで力強い" },
+        { key: "chibi", name: "ちび", scaleX: 0.85, scaleY: 0.85, bellyWidth: 10, desc: "小柄で小回りが効く" },
+        { key: "skinny", name: "痩せ", scaleX: 1.15, scaleY: 0.85, bellyWidth: 8, desc: "シャープで細身" },
+        { key: "normal", name: "普通", scaleX: 1.05, scaleY: 1.05, bellyWidth: 12, desc: "標準的な体形" }
     ];
 
     class HorseRacingGame {
@@ -777,9 +832,8 @@
         }
 
         initHorses() {
-            const shuffledNames = [...HORSE_NAME_POOL].sort(() => Math.random() - 0.5).slice(0, 6);
+            const shuffledPool = [...HORSE_NAME_POOL].sort(() => Math.random() - 0.5).slice(0, 6);
             const shuffledTypes = [...HORSE_TYPES].sort(() => Math.random() - 0.5);
-            const shuffledColors = [...HORSE_BODY_COLORS].sort(() => Math.random() - 0.5);
             
             const rnd = Math.random();
             if (rnd < 0.20) {
@@ -790,21 +844,35 @@
                 this.raceMode = "NORMAL";
             }
 
-            const tempHorses = shuffledNames.map((name, idx) => {
+            const tempHorses = shuffledPool.map((horseName, idx) => {
                 const type = shuffledTypes[idx];
-                const color = shuffledColors[idx];
                 const conditionBonus = (Math.random() * 0.24) - 0.12;
                 const breakoutForm = (Math.random() < 0.15) ? 0.10 : 0.0;
                 const effectiveSpeed = type.baseSpeed + conditionBonus + breakoutForm;
                 const rating = effectiveSpeed * 0.6 + type.spurt * 0.4;
-                return { name, type, color, effectiveSpeed, rating, idx };
+                
+                // 馬名をもとにランダムで見た目デザインを割り当て
+                const coatInfo = COAT_VARIATIONS[Math.floor(Math.random() * COAT_VARIATIONS.length)];
+                
+                return { 
+                    horseInfo: {
+                        name: horseName,
+                        ...coatInfo
+                    }, 
+                    type, 
+                    effectiveSpeed, 
+                    rating, 
+                    idx 
+                };
             });
 
             const maxRating = Math.max(...tempHorses.map(h => h.rating));
             const minRating = Math.min(...tempHorses.map(h => h.rating));
 
             this.horses = tempHorses.map((item) => {
-                const { name, type, color, effectiveSpeed, rating, idx } = item;
+                const { horseInfo, type, effectiveSpeed, rating, idx } = item;
+                const horseId = idx + 1;
+                const frameColorObj = FRAME_COLORS[idx];
                 
                 const normalizedRank = (rating - minRating) / (maxRating - minRating || 1);
                 let oddsVal;
@@ -835,10 +903,18 @@
                     else sashiMode = "TOO_LATE";
                 }
 
-                return {
-                    id: idx + 1,
-                    name: name,
-                    color: color,
+                // 4つの体型（デブ・ちび・痩せ・普通）からランダム指定
+                const bodyType = BODY_TYPES[Math.floor(Math.random() * BODY_TYPES.length)];
+
+                const horseObj = {
+                    id: horseId,
+                    name: horseInfo.name,
+                    coat: horseInfo.coat,
+                    color: frameColorObj.color, // 指定された1〜6番の枠色を馬の本体カラーに設定
+                    maneColor: horseInfo.maneColor,
+                    faceMark: horseInfo.faceMark,
+                    socks: horseInfo.socks,
+                    bodyType: bodyType,
                     styleName: type.styleName,
                     typeKey: type.typeKey,
                     desc: type.desc,
@@ -853,8 +929,18 @@
                     boostTimer: 0,
                     rank: 0,
                     x: 0,
-                    y: 0
+                    y: 0,
+                    aiTexture: null
                 };
+
+                // AIテクスチャ非同期読み込み
+                if (window.generateHorseTexture) {
+                    window.generateHorseTexture(horseObj.name, `${horseObj.coat} with ${frameColorObj.name} equipment`, horseObj.faceMark).then(img => {
+                        if (img) horseObj.aiTexture = img;
+                    });
+                }
+
+                return horseObj;
             });
 
             this.clearBets(this.p1);
@@ -1712,47 +1798,34 @@
             ctx.save();
             ctx.translate(h.x, h.y);
 
-            // --- ベットマーク（一番賭けた馬だけに照準・ターゲットリングを表示） ---
+            // --- ベットマーク（照準表示） ---
             const getMostBetHorseId = (player) => {
                 const totals = {};
                 for (let i = 1; i <= 6; i++) totals[i] = 0;
-                
-                // 単勝のカウント
                 for (let id in player.singleBets) {
-                    const count = player.singleBets[id] || 0;
-                    if (count > 0) totals[id] += count;
+                    if (player.singleBets[id] > 0) totals[id] += player.singleBets[id];
                 }
-                // 馬連のカウント
                 for (let key in player.exactaBets) {
-                    const count = player.exactaBets[key] || 0;
-                    if (count > 0) {
-                        const parts = key.split('-');
-                        parts.forEach(p => { if (totals[p] !== undefined) totals[p] += count; });
+                    if (player.exactaBets[key] > 0) {
+                        key.split('-').forEach(p => { if (totals[p] !== undefined) totals[p] += player.exactaBets[key]; });
                     }
                 }
-
-                let maxBet = 0;
-                let topHorseId = null;
+                let maxBet = 0, topHorseId = null;
                 for (let i = 1; i <= 6; i++) {
-                    if (totals[i] > maxBet) {
-                        maxBet = totals[i];
-                        topHorseId = i;
-                    }
+                    if (totals[i] > maxBet) { maxBet = totals[i]; topHorseId = i; }
                 }
                 return topHorseId;
             };
 
-            const p1TopHorseId = getMostBetHorseId(this.p1);
-            const p2TopHorseId = getMostBetHorseId(this.p2);
-
-            const p1HasBet = (p1TopHorseId === h.id);
-            const p2HasBet = (p2TopHorseId === h.id);
+            const p1Top = getMostBetHorseId(this.p1);
+            const p2Top = getMostBetHorseId(this.p2);
+            const p1HasBet = (p1Top === h.id);
+            const p2HasBet = (p2Top === h.id);
 
             if (p1HasBet || p2HasBet) {
                 ctx.save();
-                const ringRadius = 22;
+                const ringRadius = 24;
                 const rotAngle = this.animFrame * 0.04;
-
                 const drawTargetRing = (color, radius, rotation, dashed = false) => {
                     ctx.save();
                     ctx.rotate(rotation);
@@ -1760,14 +1833,10 @@
                     ctx.lineWidth = 2.5;
                     ctx.shadowColor = color;
                     ctx.shadowBlur = 8;
-
-                    // 外枠の円
                     ctx.beginPath();
                     if (dashed) ctx.setLineDash([6, 4]);
                     ctx.arc(0, 0, radius, 0, Math.PI * 2);
                     ctx.stroke();
-
-                    // 4方向の照準照合線（クロスヘア）
                     ctx.setLineDash([]);
                     ctx.lineWidth = 2;
                     for (let i = 0; i < 4; i++) {
@@ -1781,13 +1850,12 @@
                 };
 
                 if (p1HasBet && p2HasBet) {
-                    // 両方が同じ本命馬に賭けている場合は内外二重リング
-                    drawTargetRing('#ef4444', ringRadius + 4, rotAngle, false);  // 1P: 赤（外側）
-                    drawTargetRing('#38bdf8', ringRadius - 3, -rotAngle, true); // 2P: 青（内側点線）
+                    drawTargetRing('#ef4444', ringRadius + 4, rotAngle, false);
+                    drawTargetRing('#38bdf8', ringRadius - 3, -rotAngle, true);
                 } else if (p1HasBet) {
-                    drawTargetRing('#ef4444', ringRadius, rotAngle, false);     // 1P: 赤
+                    drawTargetRing('#ef4444', ringRadius, rotAngle, false);
                 } else if (p2HasBet) {
-                    drawTargetRing('#38bdf8', ringRadius, -rotAngle, false);    // 2P: 青
+                    drawTargetRing('#38bdf8', ringRadius, -rotAngle, false);
                 }
                 ctx.restore();
             }
@@ -1795,44 +1863,108 @@
             const dirAngle = h.angle - Math.PI / 2;
             ctx.rotate(dirAngle);
 
-            const scale = h.typeKey === "chibi" ? 0.75 : (h.typeKey === "yokozuna" ? 1.25 : (h.typeKey === "noppon" ? 1.1 : 1.0));
-            ctx.scale(scale, scale);
+            // AI生成画像テクスチャが利用可能な場合はAI生成グラフィックを描画
+            if (h.aiTexture) {
+                const bt = h.bodyType;
+                ctx.scale(bt.scaleX * 0.85, bt.scaleY * 0.85);
+                ctx.drawImage(h.aiTexture, -24, -24, 48, 48);
+
+                // ゼッケン数字
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.roundRect(-5, -5, 10, 10, 2);
+                ctx.fill();
+                ctx.fillStyle = '#000000';
+                ctx.font = '900 8px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(h.id, 0, 0);
+
+                ctx.restore();
+                return;
+            }
+
+            // 指定された4つの体型（デブ・ちび・痩せ・普通）でスケール
+            const bt = h.bodyType;
+            ctx.scale(bt.scaleX, bt.scaleY);
 
             const anim = Math.sin(this.animFrame * 0.4 + h.id);
 
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(-8, 5); ctx.lineTo(-12 + anim * 6, 15);
-            ctx.moveTo(8, 5);  ctx.lineTo(12 - anim * 6, 15);
-            ctx.moveTo(-5, 5); ctx.lineTo(-8 - anim * 6, 14);
-            ctx.moveTo(5, 5);  ctx.lineTo(8 + anim * 6, 14);
-            ctx.stroke();
+            // 1. 脚（ソックス表現付き）
+            const legOffsets = [-10, 10, -6, 6];
+            legOffsets.forEach((lx, i) => {
+                const legAnim = (i % 2 === 0 ? anim : -anim) * 5;
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = bt.key === "fat" ? 4.5 : (bt.key === "skinny" ? 2.5 : 3.5);
+                ctx.beginPath();
+                ctx.moveTo(lx, 4);
+                ctx.lineTo(lx + legAnim, 16);
+                ctx.stroke();
 
+                if (h.socks && h.socks[i]) {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3.5;
+                    ctx.beginPath();
+                    ctx.moveTo(lx + legAnim * 0.7, 11);
+                    ctx.lineTo(lx + legAnim, 16);
+                    ctx.stroke();
+                }
+            });
+
+            // 2. 体型に応じた胴体描画
             ctx.fillStyle = h.color;
             ctx.beginPath();
-            if (h.typeKey === "yokozuna") {
-                ctx.ellipse(0, 0, 18, 14, 0, 0, Math.PI * 2);
-            } else {
-                ctx.ellipse(0, 0, 16, 10, 0, 0, Math.PI * 2);
-            }
+            ctx.ellipse(0, 0, 16, bt.bellyWidth, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#ffffff';
+            ctx.strokeStyle = '#000000';
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
+            // 3. 尻尾
+            ctx.strokeStyle = h.maneColor || '#000000';
+            ctx.lineWidth = 3.5;
             ctx.beginPath();
-            ctx.arc(14, -6 + anim * 2, 7, 0, Math.PI * 2);
+            ctx.moveTo(-14, 0);
+            ctx.quadraticCurveTo(-20, anim * 4, -18, 8);
+            ctx.stroke();
+
+            // 4. 首と頭部
+            ctx.fillStyle = h.color;
+            ctx.beginPath();
+            ctx.ellipse(11, -7 + anim * 1.5, 8, 7, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = '#facc15';
+            // 5. たてがみ
+            ctx.fillStyle = h.maneColor || '#000000';
             ctx.beginPath();
-            ctx.arc(0, -6, 5, 0, Math.PI * 2);
+            ctx.arc(5, -10 + anim * 1.5, 3.5, 0, Math.PI * 2);
+            ctx.arc(9, -12 + anim * 1.5, 3.5, 0, Math.PI * 2);
             ctx.fill();
 
+            // 6. 顔の流星（白斑）
+            if (h.faceMark && h.faceMark !== "none") {
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                if (h.faceMark === "star") {
+                    ctx.arc(14, -9 + anim * 1.5, 2, 0, Math.PI * 2);
+                } else if (h.faceMark === "blaze" || h.faceMark === "stripe") {
+                    ctx.ellipse(14, -8 + anim * 1.5, 3.5, 1.8, 0.3, 0, Math.PI * 2);
+                }
+                ctx.fill();
+            }
+
+            // 7. ゼッケン（馬番号）
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.roundRect(-6, -6, 12, 12, 3);
+            ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
             ctx.fillStyle = '#0f172a';
-            ctx.font = '900 10px sans-serif';
+            ctx.font = '900 9px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(h.id, 0, 0);
@@ -1872,6 +2004,7 @@
                     }
 
                     const cardHorse = this.horses[displayIdx];
+                    const frameObj = FRAME_COLORS[displayIdx];
                     const row = Math.floor(idx / 3);
                     const col = idx % 3;
                     const x = startX + col * (cardW + gap);
@@ -1886,31 +2019,48 @@
                         ctx.translate(-(x + cardW / 2), -(y + cardH / 2));
                     }
 
-                    // カードの背景枠描画
-                    ctx.fillStyle = player.exactaSel === displayIdx ? 'rgba(234, 179, 8, 0.25)' : 'rgba(30, 41, 59, 0.9)';
-                    ctx.strokeStyle = player.exactaSel === displayIdx ? '#eab308' : cardHorse.color;
-                    ctx.lineWidth = player.exactaSel === displayIdx ? 3 : 2;
+                    // カードの背景枠・カラーグラデーション描画
+                    const isSelected = player.exactaSel === displayIdx;
+                    ctx.fillStyle = isSelected ? 'rgba(234, 179, 8, 0.35)' : 'rgba(15, 23, 42, 0.95)';
+                    ctx.strokeStyle = isSelected ? '#eab308' : frameObj.color;
+                    ctx.lineWidth = isSelected ? 3.5 : 2.5;
 
                     ctx.beginPath();
                     ctx.roundRect(x, y, cardW, cardH, 8);
                     ctx.fill();
                     ctx.stroke();
 
-                    // 馬番号・名前（名前の長さに合わせてフォントサイズを自動調整）
-                    ctx.fillStyle = cardHorse.color;
-                    const nameText = `${cardHorse.id}.${cardHorse.name}`;
-                    const fontSize = nameText.length > 8 ? 10 : (nameText.length > 6 ? 11 : 13);
+                    // 馬番号のヘッダーバッジ背景
+                    ctx.fillStyle = frameObj.color;
+                    ctx.beginPath();
+                    ctx.roundRect(x + 4, y + 4, 18, 16, 4);
+                    ctx.fill();
+
+                    // バッジ内の数字
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = '900 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(cardHorse.id, x + 13, y + 12);
+
+                    // 馬名表示（指定色カラー付き）
+                    ctx.fillStyle = '#ffffff';
+                    const nameText = cardHorse.name;
+                    const fontSize = nameText.length > 8 ? 9 : (nameText.length > 6 ? 10 : 12);
                     ctx.font = `900 ${fontSize}px sans-serif`;
                     ctx.textAlign = 'left';
-                    ctx.fillText(nameText, x + 6, y + 18);
+                    ctx.textBaseline = 'alphabetic';
+                    ctx.fillText(nameText, x + 26, y + 16);
 
-                    // 脚質・オッズ
+                    // 体形・脚質・オッズ
                     ctx.fillStyle = '#94a3b8';
-                    ctx.font = '700 10px sans-serif';
-                    ctx.fillText(`[${cardHorse.styleName}]`, x + 6, y + 33);
+                    ctx.font = '700 9px sans-serif';
+                    ctx.fillText(`[${cardHorse.bodyType.name}/${cardHorse.styleName}]`, x + 6, y + 33);
+
+                    ctx.fillStyle = frameObj.color;
                     ctx.font = '900 12px sans-serif';
                     ctx.textAlign = 'right';
-                    ctx.fillText(`×${cardHorse.odds}`, x + cardW - 8, y + 33);
+                    ctx.fillText(`×${cardHorse.odds}`, x + cardW - 6, y + 33);
 
                     // ベット数表示
                     const singleBet = player.singleBets[cardHorse.id] || 0;
@@ -1924,8 +2074,8 @@
                     ctx.fillStyle = '#f8fafc';
                     ctx.font = '700 10px sans-serif';
                     ctx.textAlign = 'left';
-                    ctx.fillText(`単勝: ${singleBet}枚`, x + 8, y + 50);
-                    ctx.fillText(`馬連絡み: ${exactaBetCount}枚`, x + 8, y + 64);
+                    ctx.fillText(`単勝: ${singleBet}枚`, x + 6, y + 50);
+                    ctx.fillText(`馬連: ${exactaBetCount}枚`, x + 6, y + 64);
 
                     ctx.restore();
                 });
