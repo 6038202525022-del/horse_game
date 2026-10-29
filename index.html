@@ -195,6 +195,11 @@
             <span id="commentary-text">ゲートが開いた！一斉にスタート！</span>
         </div>
 
+        <!-- システムメッセージ表示用通知ポップアップ -->
+        <div id="message-box" class="hidden absolute top-10 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-950 px-4 py-2 rounded-xl shadow-2xl font-black text-xs md:text-sm border-2 border-amber-300 flex items-center gap-2 text-center transition-all duration-300">
+            <span id="message-text">メッセージ</span>
+        </div>
+
         <!-- 起動時：注意書き & プレイヤー名/パスワード入力モーダル -->
         <div id="login-modal" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
             <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl p-5 max-w-md w-full text-center shadow-2xl flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
@@ -208,7 +213,6 @@
                     <p>・ゲーム内のコインや破産（倒産）システムは演出上のエンターテインメント機能です。</p>
                     <p>・マナーを守り、白熱した2人対戦をお楽しみください！</p>
                     <p>・実在の人物と馬の名前は一切関係ありません</p>
-
                 </div>
 
                 <!-- ステップ1: 1Pの名前とパスワードを入力 -->
@@ -218,16 +222,31 @@
                         <input type="text" id="input-username" required placeholder="例: ブロッコリーマヨネーズ" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-2 text-xs text-white outline-none">
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1.5">パスワード (半角数字6桁)</label>
-                        <!-- 1文字ずつ四角い枠に分割した入力フィールド -->
-                        <div id="otp-container" class="flex justify-center gap-0.5 my-1">
-                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
-                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
-                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
-                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
-                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
-                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input w-10 h-12 text-center text-lg font-black text-amber-400 bg-slate-950 border-2 border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors" required>
+                    <!-- 【新規用】パスワード設定 -->
+                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-1">
+                        <label class="block text-xs font-black text-amber-400">✨ 新規用 パスワード設定 (半角数字6桁)</label>
+                        <p class="text-[10px] text-slate-400">新しくゲームを始める際の設定用パスワードです。</p>
+                        <div id="otp-container-new" class="flex justify-center gap-0.5 my-1">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-new w-9 h-10 text-center text-base font-black text-amber-400 bg-slate-900 border border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-new w-9 h-10 text-center text-base font-black text-amber-400 bg-slate-900 border border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-new w-9 h-10 text-center text-base font-black text-amber-400 bg-slate-900 border border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-new w-9 h-10 text-center text-base font-black text-amber-400 bg-slate-900 border border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-new w-9 h-10 text-center text-base font-black text-amber-400 bg-slate-900 border border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-new w-9 h-10 text-center text-base font-black text-amber-400 bg-slate-900 border border-slate-700 rounded-lg focus:border-amber-400 focus:outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <!-- 【復元用】パスワード入力欄 -->
+                    <div class="bg-cyan-950/30 p-2.5 rounded-xl border border-cyan-800/60 space-y-1">
+                        <label class="block text-xs font-black text-cyan-300">📂 以前のセーブデータを復元する場合 (6桁)</label>
+                        <p class="text-[10px] text-slate-400">※過去に保存したパスワードを入力すると続きから遊べます。</p>
+                        <div id="otp-container-restore" class="flex justify-center gap-0.5 my-1">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-restore w-9 h-10 text-center text-base font-black text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:border-cyan-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-restore w-9 h-10 text-center text-base font-black text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:border-cyan-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-restore w-9 h-10 text-center text-base font-black text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:border-cyan-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-restore w-9 h-10 text-center text-base font-black text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:border-cyan-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-restore w-9 h-10 text-center text-base font-black text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:border-cyan-400 focus:outline-none transition-colors">
+                            <input type="password" maxlength="1" pattern="[0-9]" inputmode="numeric" class="otp-input-restore w-9 h-10 text-center text-base font-black text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:border-cyan-400 focus:outline-none transition-colors">
                         </div>
                     </div>
 
@@ -428,7 +447,7 @@
     <script>
     // 馬のデータ定義定数
     const HORSE_NAME_POOL = [
-        "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
+         "サンダーボルト", "ディープスター", "ゴールドシップ","アデハデマジカ", "サイレンススズカ",
         "サイレンスウインド", "キングカメハメ", "ナニヲヤッテイルンダ", "トウカイテイオー","タッカルビカンタ","ナリタブライアン",
         "スペシャルウィーク", "アグリキャップ", "シンボリルドルフ", "サルトサイキョウ",
         "アーモンドアイ", "ウオッカ","サルトシッソク","ヒヨシメガネ","サヤダイボウソウ", "ダイトウリョウボウソウ", "ライスシャワー"
@@ -494,50 +513,55 @@
         submitLogin(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('input-username');
-            const otpInputs = document.querySelectorAll('.otp-input');
+            const newOtpInputs = document.querySelectorAll('.otp-input-new');
+            const restoreOtpInputs = document.querySelectorAll('.otp-input-restore');
             const loginError = document.getElementById('login-error');
 
             const valName = usernameInput ? usernameInput.value.trim() : '';
-            // 6個の四角枠から入力文字を連結
-            let valPass = '';
-            otpInputs.forEach(input => {
-                valPass += input.value;
-            });
 
-            if (!valName || valPass.length < 6) {
+            let newPass = '';
+            newOtpInputs.forEach(input => newPass += input.value);
+
+            let restorePass = '';
+            restoreOtpInputs.forEach(input => restorePass += input.value);
+
+            // 復元パスワードが入力されていれば優先、なければ新規パスワードを使用
+            let isRestore = false;
+            let finalPass = '';
+
+            if (restorePass.length === 6 && /^\d{6}$/.test(restorePass)) {
+                isRestore = true;
+                finalPass = restorePass;
+            } else if (newPass.length === 6 && /^\d{6}$/.test(newPass)) {
+                isRestore = false;
+                finalPass = newPass;
+            } else {
                 if (loginError) {
-                    loginError.textContent = "1Pの名前と6桁の数字パスワードを入力してください。";
+                    loginError.textContent = "新規作成用か復元用のどちらかに6桁の数字パスワードを入力してください。";
                     loginError.classList.remove('hidden');
                 }
                 return;
             }
 
-            // パスワード判定を「6桁の整数」に限定
-            if (!/^\d{6}$/.test(valPass)) {
+            if (!valName) {
                 if (loginError) {
-                    loginError.textContent = "パスワードは6桁の数字(例: 123456)で入力してください。";
+                    loginError.textContent = "1Pのプレイヤー名を入力してください。";
                     loginError.classList.remove('hidden');
                 }
                 return;
             }
 
             this.username = valName;
-            this.password = valPass;
-            this.p1.name = valName; // 1Pの名前を代入
-            
-            // 画面上（下部パネル）の1P名表示を更新
+            this.password = finalPass;
+            this.isRestoreMode = isRestore; // 復元用か新規かを保持
+            this.p1.name = valName;
+
             const p1NameLabel = document.getElementById('p1-display-name');
-            if (p1NameLabel) {
-                p1NameLabel.textContent = valName;
-            }
+            if (p1NameLabel) p1NameLabel.textContent = valName;
 
-            // 中央帯の1Pラベルも更新
             const centerP1Label = document.querySelector('#center-race-history-banner .text-rose-400');
-            if (centerP1Label) {
-                centerP1Label.textContent = `🏆 ${valName}`;
-            }
+            if (centerP1Label) centerP1Label.textContent = `🏆 ${valName}`;
 
-            // 第1ステップの入力画面を閉じ、2P名前入力モーダルを開く
             const loginModal = document.getElementById('login-modal');
             if (loginModal) loginModal.classList.add('hidden');
 
@@ -549,83 +573,81 @@
 
         submit2PName(e) {
             if (e) e.preventDefault();
-            const p2UsernameInput = document.getElementById('input-p2-username');
-
-            const valP2Name = p2UsernameInput ? p2UsernameInput.value.trim() : '';
-
-            if (!valP2Name) {
-                // 名前未入力の場合はデフォルト名でスキップ処理
-                this.skip2PName();
-                return;
-            }
-
-            this.apply2PName(valP2Name);
+            const input2P = document.getElementById('input-p2-username');
+            const val = input2P ? input2P.value.trim() : '';
+            this.apply2PName(val || "2P PLAYER");
         }
 
         skip2PName() {
-            // スキップされた場合はデフォルト名 "2P PLAYER" を代入
             this.apply2PName("2P PLAYER");
         }
 
+        showMessageBox(msg) {
+            const box = document.getElementById('message-box');
+            const text = document.getElementById('message-text');
+            if (box && text) {
+                text.textContent = msg;
+                box.classList.remove('hidden');
+                setTimeout(() => {
+                    box.classList.add('hidden');
+                }, 3500);
+            }
+        }
+
         async apply2PName(name) {
-            this.p2.name = name; // 2Pの名前を代入
+            this.p2.name = name;
 
-            // 画面上（上部パネル）の2P名表示を更新
             const p2NameLabel = document.querySelector('header .text-cyan-400');
-            if (p2NameLabel) {
-                p2NameLabel.textContent = name;
-            }
+            if (p2NameLabel) p2NameLabel.textContent = name;
 
-            // 中央帯の2Pラベルも更新
             const centerP2Label = document.querySelector('#center-race-history-banner .text-cyan-400');
-            if (centerP2Label) {
-                centerP2Label.textContent = `🏆 ${name}`;
-            }
+            if (centerP2Label) centerP2Label.textContent = `🏆 ${name}`;
 
-            // 2Pモーダルを閉じる
             const p2Modal = document.getElementById('p2-name-modal');
             if (p2Modal) p2Modal.classList.add('hidden');
 
             playSound('coin');
 
-            // ★ セーブデータの読み込み（1P名、パスワード、2P名から検索）
-            await this.tryLoadSavedData();
+            // 復元用パスワードが入力されている場合のみセーブデータを探索
+            if (this.isRestoreMode) {
+                await this.tryLoadSavedData();
+            } else {
+                this.showMessageBox("✨ 新規スタート！\nパスワード: " + this.password + " でセーブ可能です。");
+            }
 
-            // 馬券購入画面に正常に遷移するよう初期設定とUI更新を呼び出し
             this.state = "BETTING";
             this.initHorses();
             this.updateBetUI();
         }
 
-        // セーブデータ復元処理（5日間の有効期限チェック付き）
+        // セーブデータ復元処理
         async tryLoadSavedData() {
             try {
                 if (typeof window.loadGameDataFromCloud === 'function') {
                     const savedData = await window.loadGameDataFromCloud(this.p1.name, this.password, this.p2.name);
                     if (savedData) {
                         const now = Date.now();
-                        const fiveDaysMs = 5 * 24 * 60 * 60 * 1000; // 5日間 (ミリ秒)
+                        const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
 
                         if (savedData.updatedAt && (now - savedData.updatedAt > fiveDaysMs)) {
-                            this.showMessageBox("⚠️ セーブデータの保存期限（5日間）が切れていたため、新規データでスタートします。");
+                            this.showMessageBox("⚠️ セーブデータの有効期限（5日間）が切れていたため新規データで開始します。");
                         } else {
-                            // 復元成功
                             this.p1.medals = savedData.p1Medals ?? 100;
                             this.p1.debt = savedData.p1Debt ?? 0;
                             this.p2.medals = savedData.p2Medals ?? 100;
                             this.p2.debt = savedData.p2Debt ?? 0;
-                            if (savedData.raceHistory) {
-                                this.raceHistory = savedData.raceHistory;
-                            }
-                            this.showMessageBox("📂 以前のセーブデータを復元しました！");
+                            if (savedData.raceHistory) this.raceHistory = savedData.raceHistory;
+
+                            this.showMessageBox("📂 復元成功！前回の続きからスタートします。");
                             playSound('win');
                         }
                     } else {
-                        this.showMessageBox("✨ 新規スタート！（同じパスワードでセーブ可能です）");
+                        this.showMessageBox("⚠️ 該当するセーブデータが見つからなかったため、新規データでスタートします。");
                     }
                 }
             } catch (err) {
                 console.error("Failed to load save data:", err);
+                this.showMessageBox("❌ 復元エラーが発生しました。新規でスタートします。");
             }
         }
 
@@ -644,51 +666,36 @@
                         raceHistory: this.raceHistory
                     };
                     await window.saveGameDataToCloud(saveData);
-                    this.showMessageBox("💾 ゲームデータ（メダル・戦績）を保存しました！\n※保存期間は5日間です。");
+                    this.showMessageBox("💾 セーブが完了しました！（有効期限: 5日間）");
                     playSound('coin');
                 }
             } catch (err) {
                 console.error("Failed to save data:", err);
-                this.showMessageBox("❌ 保存に失敗しました。時間をおいて再試行してください。");
+                this.showMessageBox("❌ 保存に失敗しました。再試行してください。");
             }
-        }
-
-        // メッセージ通知モーダル表示用（alert代替）
-        showMessageBox(msg) {
-            let box = document.getElementById('game-msg-box');
-            if (!box) {
-                box = document.createElement('div');
-                box.id = 'game-msg-box';
-                box.className = 'fixed top-12 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border-2 border-amber-400 text-amber-200 px-4 py-2 rounded-xl shadow-2xl text-xs font-black text-center backdrop-blur-md transition-all duration-300 opacity-0 transform -translate-y-2 pointer-events-none';
-                document.body.appendChild(box);
-            }
-            box.innerText = msg;
-            box.classList.remove('opacity-0', '-translate-y-2');
-            box.classList.add('opacity-100', 'translate-y-0');
-            
-            setTimeout(() => {
-                box.classList.remove('opacity-100', 'translate-y-0');
-                box.classList.add('opacity-0', '-translate-y-2');
-            }, 3000);
         }
 
         setupEvents() {
-            // 1文字ずつ四角の枠に入力した時のフォーカス自動移動制御
-            const otpInputs = document.querySelectorAll('.otp-input');
-            otpInputs.forEach((input, index) => {
-                input.addEventListener('input', (e) => {
-                    const val = e.target.value;
-                    if (val.length === 1 && index < otpInputs.length - 1) {
-                        otpInputs[index + 1].focus();
-                    }
-                });
+            // 自動フォーカス移動（新規用・復元用両対応）
+            const setupOtpAutoTab = (selector) => {
+                const otpInputs = document.querySelectorAll(selector);
+                otpInputs.forEach((input, index) => {
+                    input.addEventListener('input', (e) => {
+                        if (e.target.value.length === 1 && index < otpInputs.length - 1) {
+                            otpInputs[index + 1].focus();
+                        }
+                    });
 
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Backspace' && !input.value && index > 0) {
-                        otpInputs[index - 1].focus();
-                    }
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && !input.value && index > 0) {
+                            otpInputs[index - 1].focus();
+                        }
+                    });
                 });
-            });
+            };
+
+            setupOtpAutoTab('.otp-input-new');
+            setupOtpAutoTab('.otp-input-restore');
 
             // Canvas Click Event (Select bets / Dismiss result screen)
             this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
