@@ -227,6 +227,11 @@
             <span id="commentary-text">ゲートが開いた！一斉にスタート！</span>
         </div>
 
+        <!-- カウントダウン表示オーバレイ -->
+        <div id="countdown-banner" class="hidden absolute inset-0 z-40 flex items-center justify-center pointer-events-none bg-slate-950/30 backdrop-blur-[2px]">
+            <span id="countdown-text" class="text-7xl md:text-9xl font-black text-amber-400 drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] animate-bounce">3</span>
+        </div>
+
         <!-- 起動時：注意書き & プレイヤー名/パスワード入力モーダル -->
         <div id="login-modal" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
             <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl p-5 max-w-md w-full text-center shadow-2xl flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
@@ -459,6 +464,37 @@
                     gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
                     osc.start(now);
                     osc.stop(now + 0.08);
+                } else if (type === 'fanfare') {
+                    // ★ ラッパ（ファンファーレ）サウンド演出（ド・ミ・ソ・ド）
+                    const notes = [
+                        { f: 523.25, duration: 0.12, time: 0 },       // C5
+                        { f: 659.25, duration: 0.12, time: 0.13 },    // E5
+                        { f: 783.99, duration: 0.12, time: 0.26 },    // G5
+                        { f: 1046.50, duration: 0.45, time: 0.40 }    // C6
+                    ];
+                    notes.forEach(note => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'sawtooth'; // トランペット風の金管音色
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        
+                        const startTime = now + note.time;
+                        noteOsc.frequency.setValueAtTime(note.f, startTime);
+                        noteGain.gain.setValueAtTime(0.2, startTime);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + note.duration);
+                        
+                        noteOsc.start(startTime);
+                        noteOsc.stop(startTime + note.duration);
+                    });
+                } else if (type === 'count_beep') {
+                    // カウントダウン音
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
                 } else if (type === 'carrot') {
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(440, now);
@@ -1201,14 +1237,14 @@
                 player.carrots[horseIndex]--;
                 const h = this.horses[horseIndex];
                 h.isBoosting = true;
-                h.boostTimer = 18;
+                h.boostTimer = 25;
                 playSound('carrot');
                 
-                for (let i = 0; i < 8; i++) {
+                for (let i = 0; i < 12; i++) {
                     this.particles.push({
                         x: h.x, y: h.y,
-                        vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
-                        color: "#f97316", life: 15
+                        vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+                        color: "#f97316", life: 20
                     });
                 }
                 this.updateBetUI();
@@ -1217,7 +1253,7 @@
 
         startRace() {
             if (this.state !== "BETTING") return;
-            this.state = "RACING";
+            this.state = "COUNTDOWN";
             this.rankings = [];
             this.isPhotoFinish = false;
             
@@ -1231,6 +1267,37 @@
                 goal: false,
                 result: false
             };
+
+            // ★ カウントダウン（3・2・1）とラッパ（ファンファーレ）演出
+            const countdownOverlay = document.getElementById('countdown-banner');
+            const countdownText = document.getElementById('countdown-text');
+            if (countdownOverlay && countdownText) {
+                countdownOverlay.classList.remove('hidden');
+                countdownText.textContent = "3";
+                playSound('count_beep');
+
+                setTimeout(() => {
+                    countdownText.textContent = "2";
+                    playSound('count_beep');
+                }, 800);
+
+                setTimeout(() => {
+                    countdownText.textContent = "1";
+                    playSound('count_beep');
+                }, 1600);
+
+                setTimeout(() => {
+                    countdownText.textContent = "GO!! 🏇";
+                    playSound('fanfare');
+                }, 2400);
+
+                setTimeout(() => {
+                    countdownOverlay.classList.add('hidden');
+                    this.state = "RACING";
+                }, 3000);
+            } else {
+                this.state = "RACING";
+            }
 
             // ★ワンツー（1着・2着）組み合わせの出現率に基づく目標パターンの抽選
             const is1000m = (this.raceDistance === 1000);
@@ -1352,12 +1419,13 @@
             const renderRacingCarrots = (player, containerId) => {
                 const container = document.getElementById(containerId);
                 if (!container) return;
+                // ★ 1000m/1600m問わず、RACING状態で手持ちのにんじんがある場合に常時ボタンを表示
                 if (this.state === "RACING") {
                     container.classList.remove('hidden');
                     let html = '';
                     player.carrots.forEach((cnt, idx) => {
                         if (cnt > 0) {
-                            html += `<button onclick="window.game.useCarrot(${player === this.p1 ? 'window.game.p1' : 'window.game.p2'}, ${idx})" class="btn-arcade bg-orange-600 hover:bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded text-[9px]">🥕 ${idx+1}番(${cnt})</button>`;
+                            html += `<button onclick="window.game.useCarrot(${player === this.p1 ? 'window.game.p1' : 'window.game.p2'}, ${idx})" class="btn-arcade bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-lg text-[10px] shadow border-b border-orange-700 flex items-center gap-1 animate-bounce">🥕 ${idx+1}番馬ブースト(${cnt})</button>`;
                         }
                     });
                     container.innerHTML = html;
@@ -1373,54 +1441,42 @@
         }
 
         checkBankruptcy() {
-            if (this.p1.medals <= 0 && this.getBetTotal(this.p1) === 0) {
-                this.showBankruptcyModal(this.p1, "1P");
-                return true;
-            }
-            if (this.p2.medals <= 0 && this.getBetTotal(this.p2) === 0) {
-                this.showBankruptcyModal(this.p2, "2P");
-                return true;
-            }
-            return false;
-        }
-
-        getBetTotal(player) {
-            let total = 0;
-            for (let k in player.singleBets) total += player.singleBets[k];
-            for (let k in player.exactaBets) total += player.exactaBets[k];
-            return total;
-        }
-
-        showBankruptcyModal(player, tag) {
-            this.bankruptPlayer = player;
-            const modal = document.getElementById('bankruptcy-modal');
-            const title = document.getElementById('bankrupt-player-title');
-            const pName = (player === this.p1 && this.p1.name) ? this.p1.name : tag + " PLAYER";
-            if (modal && title) {
-                title.textContent = `${pName} 倒産！`;
-                modal.classList.remove('hidden');
+            if (this.p1.medals <= 0) {
+                this.bankruptPlayer = "1P";
+                const modal = document.getElementById('bankruptcy-modal');
+                const title = document.getElementById('bankrupt-player-title');
+                if (modal && title) {
+                    title.textContent = `${this.p1.name} 倒産！`;
+                    modal.classList.remove('hidden');
+                }
+            } else if (this.p2.medals <= 0) {
+                this.bankruptPlayer = "2P";
+                const modal = document.getElementById('bankruptcy-modal');
+                const title = document.getElementById('bankrupt-player-title');
+                if (modal && title) {
+                    title.textContent = `${this.p2.name} 倒産！`;
+                    modal.classList.remove('hidden');
+                }
             }
         }
 
         borrowLoan(amount) {
-            if (!this.bankruptPlayer) return;
+            const player = this.bankruptPlayer === "1P" ? this.p1 : this.p2;
+            let interestRate = 0.03; // デフォルト3%
+            if (amount === 10) interestRate = 0.03;
+            else if (amount === 50) interestRate = 0.04;
+            else if (amount === 100) interestRate = 0.06;
 
-            // 利子率設定: 10枚=3%, 50枚=4%, 100枚=6%
-            let interestRate = 0.03;
-            if (amount === 50) interestRate = 0.04;
-            if (amount === 100) interestRate = 0.06;
-
-            const repayment = Math.ceil(amount * (1 + interestRate));
-
-            this.bankruptPlayer.medals += amount;
-            this.bankruptPlayer.debt += repayment;
-
-            playSound('coin');
+            const repayAmount = Math.ceil(amount * (1 + interestRate));
+            player.medals += amount;
+            player.debt += repayAmount;
 
             const modal = document.getElementById('bankruptcy-modal');
             if (modal) modal.classList.add('hidden');
             this.bankruptPlayer = null;
 
+            playSound('coin');
+            this.showMessageBox(`🪙 ${amount}枚を借入しました！（返済額: ${repayAmount}枚）`);
             this.updateBetUI();
         }
 
@@ -1428,14 +1484,116 @@
             location.reload();
         }
 
-        handleCanvasClick(e) {
-            if (this.state === "BANKRUPT") return;
+        useCarrot(player, horseIndex) {
+            // ★ レース進行中(RACING)かつ該当の馬にストックがある場合発動（1000m / 1600m共通）
+            if (this.state !== "RACING") return;
+            if (player.carrots && player.carrots[horseIndex] > 0) {
+                player.carrots[horseIndex]--;
+                const h = this.horses[horseIndex];
+                if (h) {
+                    h.isBoosting = true;
+                    h.boostTimer = 35; // 2周戦でも十分なブースト持続時間
+                    playSound('carrot');
+                    
+                    for (let i = 0; i < 16; i++) {
+                        this.particles.push({
+                            x: h.x, y: h.y,
+                            vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
+                            color: "#f97316", life: 25
+                        });
+                    }
+                }
+                this.updateBetUI();
+            }
+        }
 
+        startRace() {
+            if (this.state !== "BETTING") return;
+            this.state = "COUNTDOWN";
+            this.rankings = [];
+            this.isPhotoFinish = false;
+            
+            // 実況フラグのリセット
+            this.commentaryPhasesTriggered = {
+                start: false,
+                early: false,
+                mid: false,
+                turn: false,
+                straight: false,
+                goal: false,
+                result: false
+            };
+
+            // レース開始時ににんじんUIを強制表示・更新
+            this.updateBetUI();
+
+            // ★ カウントダウン（3・2・1）とラッパ（ファンファーレ）演出
+            const countdownOverlay = document.getElementById('countdown-banner');
+            const countdownText = document.getElementById('countdown-text');
+            if (countdownOverlay && countdownText) {
+                countdownOverlay.classList.remove('hidden');
+                countdownText.textContent = "3";
+                playSound('count_beep');
+
+                setTimeout(() => {
+                    countdownText.textContent = "2";
+                    playSound('count_beep');
+                }, 800);
+
+                setTimeout(() => {
+                    countdownText.textContent = "1";
+                    playSound('count_beep');
+                }, 1600);
+
+                setTimeout(() => {
+                    countdownText.textContent = "GO!! 🏇";
+                    playSound('fanfare');
+                }, 2400);
+
+                setTimeout(() => {
+                    countdownOverlay.classList.add('hidden');
+                    this.state = "RACING";
+                    this.updateBetUI();
+                }, 3000);
+            } else {
+                this.state = "RACING";
+                this.updateBetUI();
+            }
+
+            // ★ワンツー（1着・2着）組み合わせの出現率に基づく目標パターンの抽選
+            const is1000m = (this.raceDistance === 1000);
+            const rndCombo = Math.random();
+            let targetCombo = "OTHER";
+
+            if (is1000m) {
+                if (rndCombo < 0.30) targetCombo = "NIGE_SENKO";
+                else if (rndCombo < 0.55) targetCombo = "NIGE_SASHI";
+                else if (rndCombo < 0.75) targetCombo = "SENKO_SASHI";
+                else if (rndCombo < 0.90) targetCombo = "SASHI_OIKOMI";
+                else targetCombo = "OTHER";
+            } else {
+                if (rndCombo < 0.25) targetCombo = "SENKO_SASHI";
+                else if (rndCombo < 0.55) targetCombo = "SASHI_OIKOMI";
+                else if (rndCombo < 0.75) targetCombo = "SASHI_FAT_OIKOMI";
+                else if (rndCombo < 0.90) targetCombo = "NIGE_SASHI";
+                else targetCombo = "OTHER";
+            }
+            this.targetCombo = targetCombo;
+
+            this.horses.forEach(h => {
+                h.progress = 0;
+                h.boostTimer = 0;
+                h.isBoosting = false;
+                h.rank = 0;
+            });
+            this.updateBetUI();
+        }
+
+        handleCanvasClick(e) {
             if (this.state === "RESULT") {
-                // 倒産状態の場合は画面タップで進ませない
-                if (this.bankruptPlayer) return;
                 this.state = "BETTING";
                 this.initHorses();
+                this.updateBetUI();
                 return;
             }
 
@@ -1446,9 +1604,10 @@
             const clickY = e.clientY - rect.top;
 
             const processPlayerClick = (player, cards) => {
-                if (!cards) return;
                 cards.forEach(card => {
-                    if (clickX >= card.x && clickX <= card.x + card.width && clickY >= card.y && clickY <= card.y + card.height) {
+                    if (clickX >= card.x && clickX <= card.x + card.width &&
+                        clickY >= card.y && clickY <= card.y + card.height) {
+                        
                         if (player.mode === "SINGLE") {
                             this.placeBet(player, "SINGLE", card.index);
                         } else if (player.mode === "EXACTA") {
