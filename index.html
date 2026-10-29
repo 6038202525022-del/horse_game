@@ -338,15 +338,15 @@
                     <span class="text-xs font-bold text-amber-400">【借入オプション（高利貸し）】</span>
                     <button onclick="window.game.borrowLoan(10)" class="btn-arcade bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
                         <span>🪙 10枚借りる</span>
-                        <span class="text-[10px] bg-slate-950/40 text-amber-200 px-1.5 py-0.5 rounded">返済: 15枚 (利子50%)</span>
+                        <span class="text-[10px] bg-slate-950/40 text-amber-200 px-1.5 py-0.5 rounded">返済: 11枚 (利子3%)</span>
                     </button>
                     <button onclick="window.game.borrowLoan(50)" class="btn-arcade bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-slate-950 font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
                         <span>🪙 50枚借りる</span>
-                        <span class="text-[10px] bg-slate-950/40 text-orange-200 px-1.5 py-0.5 rounded">返済: 80枚 (利子60%)</span>
+                        <span class="text-[10px] bg-slate-950/40 text-orange-200 px-1.5 py-0.5 rounded">返済: 52枚 (利子4%)</span>
                     </button>
                     <button onclick="window.game.borrowLoan(100)" class="btn-arcade bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-black py-2 rounded-lg text-xs flex justify-between px-3 items-center">
                         <span>🪙 100枚借りる</span>
-                        <span class="text-[10px] bg-slate-950/40 text-red-200 px-1.5 py-0.5 rounded">返済: 180枚 (利子80%)</span>
+                        <span class="text-[10px] bg-slate-950/40 text-red-200 px-1.5 py-0.5 rounded">返済: 106枚 (利子6%)</span>
                     </button>
                 </div>
 
@@ -1323,9 +1323,9 @@
             if (!this.bankruptPlayer) return;
 
             // それぞれ利子が 50%, 60%, 80%
-            let interestRate = 0.5;
-            if (amount === 50) interestRate = 0.6;
-            if (amount === 100) interestRate = 0.8;
+            let interestRate = 0.03;
+            if (amount === 50) interestRate = 0.04;
+            if (amount === 100) interestRate = 0.06;
 
             const repayment = Math.floor(amount * (1 + interestRate));
 
