@@ -313,10 +313,34 @@
                             スキップ ⏩
                         </button>
                         <button type="submit" class="w-2/3 btn-arcade bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-black py-2.5 rounded-lg text-sm shadow-lg border-b-2 border-cyan-800">
-                            ゲームを開始する 🏇
+                            次へ（距離選択へ） 🏇
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- ステップ3: レース距離選択モーダル（1000m / 1600m） -->
+        <div id="distance-modal" class="hidden absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-slate-900 border-2 border-emerald-500 rounded-2xl p-5 max-w-md w-full text-center shadow-2xl flex flex-col gap-4">
+                <div class="text-lg font-black text-emerald-400 flex items-center justify-center gap-2">
+                    <span>🚩</span> レース距離を選択 <span>🏇</span>
+                </div>
+                <p class="text-xs text-slate-300">今回のレースの距離（周回数）を選択してください。</p>
+
+                <div class="grid grid-cols-2 gap-3 my-1">
+                    <button onclick="window.game.selectDistance(1000)" class="btn-arcade bg-slate-950 hover:bg-slate-800 border-2 border-amber-500 rounded-xl p-3 flex flex-col items-center gap-1.5 text-left transition-all">
+                        <span class="text-lg font-black text-amber-400">⚡ 1000m</span>
+                        <span class="text-[11px] font-bold text-amber-200">【1周スプリント戦】</span>
+                        <span class="text-[10px] text-slate-400 leading-tight">・逃げ切り成功率: 45%<br>・差し切り発動率: 55%<br>・追込末脚率: 30%</span>
+                    </button>
+
+                    <button onclick="window.game.selectDistance(1600)" class="btn-arcade bg-slate-950 hover:bg-slate-800 border-2 border-emerald-500 rounded-xl p-3 flex flex-col items-center gap-1.5 text-left transition-all">
+                        <span class="text-lg font-black text-emerald-400">🏁 1600m</span>
+                        <span class="text-[11px] font-bold text-emerald-200">【2周マイル戦】</span>
+                        <span class="text-[10px] text-slate-400 leading-tight">・差し切り発動率: 80%<br>・追込末脚率: 60%<br>・デブ加速ボーナス: 50%</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -506,19 +530,19 @@
     ];
 
     const HORSE_TYPES = [
-        { styleName: "逃げ", typeKey: "speed", baseSpeed: 1.15, spurt: 0.95, desc: "序盤から飛ばして逃げ切る！" },
-        { styleName: "先行", typeKey: "steady", baseSpeed: 1.08, spurt: 1.02, desc: "好位をキープし安定した走り。" },
-        { styleName: "差し", typeKey: "chaser", baseSpeed: 1.00, spurt: 1.12, desc: "終盤の直線で一気に追い抜く！" },
-        { styleName: "追込", typeKey: "spurt", baseSpeed: 0.92, spurt: 1.25, desc: "最後方から強烈な末脚を発揮！" },
-        { styleName: "コーナー", typeKey: "chibi", baseSpeed: 1.02, spurt: 1.08, desc: "コーナーでの加速が得意！" },
-        { styleName: "ムラ気", typeKey: "yokozuna", baseSpeed: 1.05, spurt: 1.10, desc: "調子の波が激しい穴馬！" }
+        { styleName: "逃げ", typeKey: "speed", baseSpeed: 1.10, spurt: 0.95, weight: 1.00, fit1000: 0.10, fit1600: -0.05, desc: "1000m戦で最有力だが1600mは苦戦！" },
+        { styleName: "先行", typeKey: "steady", baseSpeed: 1.08, spurt: 1.05, weight: 1.10, fit1000: 0.05, fit1600: 0.03, desc: "距離問わず安定して上位に絡む！" },
+        { styleName: "差し", typeKey: "chaser", baseSpeed: 1.02, spurt: 1.18, weight: 1.20, fit1000: -0.03, fit1600: 0.08, desc: "爆発的勝率を誇る最強の脚質！" },
+        { styleName: "追込", typeKey: "spurt", baseSpeed: 0.90, spurt: 1.30, weight: 1.00, fit1000: -0.10, fit1600: 0.12, desc: "ハマれば一発！波乱を呼ぶ穴馬！" },
+        { styleName: "コーナー", typeKey: "chibi", baseSpeed: 1.02, spurt: 1.08, weight: 1.05, fit1000: 0.02, fit1600: 0.02, desc: "コーナーでの加速が得意！" },
+        { styleName: "ムラ気", typeKey: "yokozuna", baseSpeed: 1.05, spurt: 1.10, weight: 1.00, fit1000: 0.00, fit1600: 0.00, desc: "調子の波が激しい穴馬！" }
     ];
 
-    // 体型バリエーション（デブ・ちび・痩せ・普通）
+    // 体型バリエーション（デブ・ちび・ノッポ・普通）
     const BODY_TYPES = [
         { key: "fat", name: "デブ", scaleX: 1.25, scaleY: 1.35, bellyWidth: 16, desc: "太めで力強い" },
         { key: "chibi", name: "ちび", scaleX: 0.85, scaleY: 0.85, bellyWidth: 10, desc: "小柄で小回りが効く" },
-        { key: "skinny", name: "痩せ", scaleX: 1.15, scaleY: 0.85, bellyWidth: 8, desc: "シャープで細身" },
+        { key: "noppo", name: "ノッポ", scaleX: 1.15, scaleY: 0.85, bellyWidth: 8, desc: "シャープで長身" },
         { key: "normal", name: "普通", scaleX: 1.05, scaleY: 1.05, bellyWidth: 12, desc: "標準的な体形" }
     ];
 
@@ -657,6 +681,17 @@
             if (p2Modal) p2Modal.classList.add('hidden');
 
             playSound('coin');
+
+            // 2P名決定後、距離選択モーダルを表示
+            const distModal = document.getElementById('distance-modal');
+            if (distModal) distModal.classList.remove('hidden');
+        }
+
+        async selectDistance(distance) {
+            this.raceDistance = distance;
+
+            const distModal = document.getElementById('distance-modal');
+            if (distModal) distModal.classList.add('hidden');
 
             // 復元用パスワードが入力されている場合のみセーブデータを探索
             if (this.isRestoreMode) {
@@ -835,6 +870,11 @@
             const shuffledPool = [...HORSE_NAME_POOL].sort(() => Math.random() - 0.5).slice(0, 6);
             const shuffledTypes = [...HORSE_TYPES].sort(() => Math.random() - 0.5);
             
+            // 距離未設定の場合はデフォルトで1000mを適用（通常はselectDistanceで決定）
+            if (!this.raceDistance) {
+                this.raceDistance = 1000;
+            }
+
             const rnd = Math.random();
             if (rnd < 0.20) {
                 this.raceMode = "BURST";
@@ -848,8 +888,10 @@
                 const type = shuffledTypes[idx];
                 const conditionBonus = (Math.random() * 0.24) - 0.12;
                 const breakoutForm = (Math.random() < 0.15) ? 0.10 : 0.0;
-                const effectiveSpeed = type.baseSpeed + conditionBonus + breakoutForm;
-                const rating = effectiveSpeed * 0.6 + type.spurt * 0.4;
+                // 脚質の基礎ウェイト（差し1.20、先行1.10、逃げ/追込1.00）をスピード計算に反映
+                const weightFactor = type.weight || 1.00;
+                const effectiveSpeed = (type.baseSpeed + conditionBonus + breakoutForm) * weightFactor;
+                const rating = effectiveSpeed * 0.6 + (type.spurt * weightFactor) * 0.4;
                 
                 // 馬名をもとにランダムで見た目デザインを割り当て
                 const coatInfo = COAT_VARIATIONS[Math.floor(Math.random() * COAT_VARIATIONS.length)];
@@ -887,30 +929,38 @@
                 }
                 const odds = parseFloat(Math.min(18.0, Math.max(1.1, oddsVal)).toFixed(1));
 
-                let nigeMode = "NORMAL";
-                if (type.styleName === "逃げ") {
-                    const rndNige = Math.random();
-                    if (rndNige < 0.35) nigeMode = "ESCAPE";
-                    else if (rndNige < 0.75) nigeMode = "NORMAL";
-                    else nigeMode = "TIRED";
-                }
-
-                let sashiMode = "STEADY";
-                if (type.styleName === "差し") {
-                    const rndSashi = Math.random();
-                    if (rndSashi < 0.33) sashiMode = "SUCCESS";
-                    else if (rndSashi < 0.66) sashiMode = "STEADY";
-                    else sashiMode = "TOO_LATE";
-                }
-
-                // 4つの体型（デブ・ちび・痩せ・普通）からランダム指定
+                // 4つの体型（デブ・ちび・ノッポ・普通）からランダム指定
                 const bodyType = BODY_TYPES[Math.floor(Math.random() * BODY_TYPES.length)];
+
+                // テーブルに基づく確率イベントの判定
+                const is1000m = (this.raceDistance === 1000);
+                
+                // 1. 逃げ馬の逃げ切り成功（1000m: 45% / 1600m: 25%）
+                const nigeSuccess = Math.random() < (is1000m ? 0.45 : 0.25);
+                
+                // 2. 先行馬が直線で差される（30%）
+                const senkoOvertaken = Math.random() < 0.30;
+                
+                // 3. 差し馬の差し切り発動（1000m: 55% / 1600m: 80%）
+                const sashiTrigger = Math.random() < (is1000m ? 0.55 : 0.80);
+                
+                // 4. 追い込み馬の末脚発動（1000m: 30% / 1600m: 60%）
+                const oikomiTrigger = Math.random() < (is1000m ? 0.30 : 0.60);
+                
+                // 5. デブの終盤加速ボーナス（1600mのみ 50%）
+                const fatBonusTrigger = (!is1000m && bodyType.key === "fat") ? (Math.random() < 0.50) : false;
+                
+                // 6. ノッポの中盤位置上昇（40%）
+                const noppoRiseTrigger = (bodyType.key === "noppo") ? (Math.random() < 0.40) : false;
+                
+                // 7. チビのゴール前競り合い勝ち（65%）
+                const chibiFightTrigger = (bodyType.key === "chibi") ? (Math.random() < 0.65) : false;
 
                 const horseObj = {
                     id: horseId,
                     name: horseInfo.name,
                     coat: horseInfo.coat,
-                    color: frameColorObj.color, // 指定された1〜6番の枠色を馬の本体カラーに設定
+                    color: frameColorObj.color,
                     maneColor: horseInfo.maneColor,
                     faceMark: horseInfo.faceMark,
                     socks: horseInfo.socks,
@@ -920,8 +970,19 @@
                     desc: type.desc,
                     baseSpeed: effectiveSpeed,
                     spurtPower: type.spurt + ((Math.random() * 0.08) - 0.04),
-                    nigeMode: nigeMode,
-                    sashiMode: sashiMode,
+                    
+                    // 特殊イベントフラグ
+                    eventFlags: {
+                        nigeSuccess,
+                        senkoOvertaken,
+                        sashiTrigger,
+                        oikomiTrigger,
+                        fatBonusTrigger,
+                        noppoRiseTrigger,
+                        chibiFightTrigger,
+                        noppoExecuted: false
+                    },
+
                     odds: odds,
                     progress: 0,
                     laneOffset: (idx - 2.5) * 11,
@@ -1171,6 +1232,28 @@
                 result: false
             };
 
+            // ★ワンツー（1着・2着）組み合わせの出現率に基づく目標パターンの抽選
+            const is1000m = (this.raceDistance === 1000);
+            const rndCombo = Math.random();
+            let targetCombo = "OTHER";
+
+            if (is1000m) {
+                // 1000m: 逃げ×先行(30%), 逃げ×差し(25%), 先行×差し(20%), 差し×追込(15%), その他(10%)
+                if (rndCombo < 0.30) targetCombo = "NIGE_SENKO";
+                else if (rndCombo < 0.55) targetCombo = "NIGE_SASHI";
+                else if (rndCombo < 0.75) targetCombo = "SENKO_SASHI";
+                else if (rndCombo < 0.90) targetCombo = "SASHI_OIKOMI";
+                else targetCombo = "OTHER";
+            } else {
+                // 1600m: 先行×差し(25%), 差し×追込(30%), 差し×デブ追込(20%), 逃げ×差し(15%), その他(10%)
+                if (rndCombo < 0.25) targetCombo = "SENKO_SASHI";
+                else if (rndCombo < 0.55) targetCombo = "SASHI_OIKOMI";
+                else if (rndCombo < 0.75) targetCombo = "SASHI_FAT_OIKOMI";
+                else if (rndCombo < 0.90) targetCombo = "NIGE_SASHI";
+                else targetCombo = "OTHER";
+            }
+            this.targetCombo = targetCombo;
+
             this.horses.forEach(h => {
                 h.progress = 0;
                 h.boostTimer = 0;
@@ -1322,12 +1405,12 @@
         borrowLoan(amount) {
             if (!this.bankruptPlayer) return;
 
-            // それぞれ利子が 50%, 60%, 80%
+            // 利子率設定: 10枚=3%, 50枚=4%, 100枚=6%
             let interestRate = 0.03;
             if (amount === 50) interestRate = 0.04;
             if (amount === 100) interestRate = 0.06;
 
-            const repayment = Math.floor(amount * (1 + interestRate));
+            const repayment = Math.ceil(amount * (1 + interestRate));
 
             this.bankruptPlayer.medals += amount;
             this.bankruptPlayer.debt += repayment;
@@ -1399,77 +1482,75 @@
             const thirdPlace = topHorses[2];
             const tailHorse = topHorses[topHorses.length - 1];
             
-            const isSecondBattleClose = secondPlace && thirdPlace && (secondPlace.progress - thirdPlace.progress < 0.03);
+            const targetProgress = (this.raceDistance === 1600) ? 2.0 : 1.0;
+            const isSecondBattleClose = secondPlace && thirdPlace && (secondPlace.progress - thirdPlace.progress < 0.03 * targetProgress);
 
             // ------------------ リアルタイム実況ロジック ------------------
-            const p = leader.progress;
+            const p = leader.progress / targetProgress; // 進捗割合 (0.0 ～ 1.0)
 
-            // スタート直後 (0% ~ 5%)
+            // スタート直後
             if (p < 0.05 && !this.commentaryPhasesTriggered.start) {
                 this.commentaryPhasesTriggered.start = true;
-                const lines = ["ゲートが開いた！一斉にスタート！", `${leader.id}番${leader.name}、好スタートを切った！`];
+                const lines = [`【${this.raceDistance}m戦】ゲートが開いた！一斉にスタート！`, `${leader.id}番${leader.name}、好スタートを切った！`];
                 if (tailHorse.progress < 0.01) lines.push(`${tailHorse.id}番${tailHorse.name}、やや出遅れた！`);
                 this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
             }
-            // 序盤 (12% ~ 28%)
+            // 序盤
             else if (p >= 0.12 && p < 0.28 && !this.commentaryPhasesTriggered.early) {
                 this.commentaryPhasesTriggered.early = true;
                 const lines = [
                     `${leader.id}番${leader.name}が先頭に立った！ハナを奪う！`,
                     `${secondPlace.id}番${secondPlace.name}は好位につける！`,
-                    `${tailHorse.id}番${tailHorse.name}は後方からの競馬！`,
-                    "縦長の展開、馬群が広がる！"
+                    `${tailHorse.id}番${tailHorse.name}は後方からの競馬！`
                 ];
                 this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
             }
-            // 中盤 (40% ~ 58%)
+            // 中盤
             else if (p >= 0.40 && p < 0.58 && !this.commentaryPhasesTriggered.mid) {
                 this.commentaryPhasesTriggered.mid = true;
                 const lines = [
-                    "中盤にかかり、徐々にペースが上がる！",
+                    "中盤にかかり、ペースが上がる！",
                     "先頭争いが激しくなってきた！",
-                    `${secondPlace.id}番${secondPlace.name}、外から上がってきた！`,
-                    "後方勢はじっと脚をためている！",
-                    "各馬、徐々に進出！"
+                    `${secondPlace.id}番${secondPlace.name}、外から上がってきた！`
                 ];
                 this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
             }
-            // 最終コーナー (68% ~ 78%)
+            // 最終コーナー
             else if (p >= 0.68 && p < 0.78 && !this.commentaryPhasesTriggered.turn) {
                 this.commentaryPhasesTriggered.turn = true;
                 const lines = [
                     "さあ、レースは最後のコーナーへ！",
                     `${leader.id}番${leader.name}、まだ先頭は譲らない！`,
-                    `後方から${tailHorse.id}番${tailHorse.name}が大外から来た！`,
                     "一気にまくってきた！各馬直線へ！"
                 ];
                 this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
             }
-            // 直線 (80% ~ 88%)
+            // 直線
             else if (p >= 0.80 && p < 0.88 && !this.commentaryPhasesTriggered.straight) {
                 this.commentaryPhasesTriggered.straight = true;
                 const lines = [
                     "さあ直線！激しい追い比べだ！",
-                    "各馬ムチが飛ぶ！",
                     `${secondPlace.id}番${secondPlace.name}が先頭に並んだ！差が縮まる！`,
-                    `${leader.id}番${leader.name}が抜け出した！`,
-                    "大外から強襲！内を突いてきた馬もいる！"
+                    `${leader.id}番${leader.name}が抜け出した！`
                 ];
                 this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
             }
-            // ゴール前・接戦 (88%以上)
+            // ゴール前・接戦
             else if (p >= 0.88 && !this.commentaryPhasesTriggered.goal) {
                 this.commentaryPhasesTriggered.goal = true;
                 const lines = [
                     "ゴール前！先頭はどの馬だ！？",
-                    "並んでゴールインか！？ハナ差の勝負！",
-                    "まさにクビの上げ下げ！最後は大接戦！"
+                    "並んでゴールインか！？ハナ差の勝負！"
                 ];
                 this.speakCommentary(lines[Math.floor(Math.random() * lines.length)]);
             }
-            // -------------------------------------------------------------
 
-            if (leader.progress > 0.88) {
+            // 演出（スロー判定）は 1600m の場合「2周目（最終周）」の本当のゴール直前のみに限定
+            const isActualFinalGoalPhase = (this.raceDistance === 1600) 
+                ? (leader.progress > 1.88) 
+                : (leader.progress > 0.88);
+
+            if (isActualFinalGoalPhase) {
                 this.isPhotoFinish = true;
                 if (Math.random() < 0.12) playSound('heartbeat');
             } else {
@@ -1479,88 +1560,217 @@
             const timeScale = this.isPhotoFinish ? 0.30 : 1.0;
 
             this.horses.forEach(h => {
-                if (h.progress >= 1.0) return;
+                if (h.progress >= targetProgress) return;
 
-                let speed = 0.0017 * h.baseSpeed * timeScale;
-                const progress = h.progress;
+                // 距離適性補正 (+fit1000 / +fit1600)
+                const distanceBonus = (this.raceDistance === 1600) 
+                    ? (h.type?.fit1600 ?? 0) 
+                    : (h.type?.fit1000 ?? 0);
 
-                if (progress < 0.12) {
-                    speed *= 1.08;
-                }
+                // 1600m(2周)時も遅く感じないよう全体速度を大幅にアップ（0.5 -> 0.95）
+                const distSpeedFactor = (this.raceDistance === 1600) ? 0.95 : 1.0;
+                let speed = 0.0017 * (h.baseSpeed + distanceBonus) * timeScale * distSpeedFactor;
+                
+                // ★周回数を考慮した「現在の周の進行割合(0.0～1.0)」と「現在が最終周か」を算出
+                const isFinalLap = (this.raceDistance === 1600) ? (h.progress >= 1.0) : true;
+                const currentLapProgress = (this.raceDistance === 1600) 
+                    ? (isFinalLap ? (h.progress - 1.0) : h.progress) 
+                    : h.progress;
 
-                if (h.styleName === "逃げ") {
-                    if (progress >= 0.12 && progress < 0.50) {
-                        speed *= 1.15;
-                    } else if (progress > 0.70) {
-                        if (h.nigeMode === "ESCAPE") {
+                const ef = h.eventFlags;
+
+                // ------------------ イベント判定＆速度計算 ------------------
+                // 1周目の場合は変速やスロー演出を入れず一定のハイペースでスムーズに通過させる
+                if (!isFinalLap) {
+                    speed = 0.0017 * h.baseSpeed * distSpeedFactor; // スロー(timeScale)を適用せず標準スピード維持
+                    if (h.styleName === "逃げ") speed *= 1.08;
+                    else if (h.styleName === "先行") speed *= 1.04;
+                } else {
+                    // ★ 2周目（最終周）のみ各脚質・体型のスパート・スロー演出を解禁
+                    if (h.styleName === "逃げ") {
+                        if (currentLapProgress >= 0.10 && currentLapProgress < 0.50) {
+                            speed *= 1.16;
+                        } else if (currentLapProgress >= 0.70) {
+                            if (ef.nigeSuccess) {
+                                speed *= 1.12; // 成功：最後まで失速せず1着狙い
+                            } else {
+                                speed *= 0.88; // 失敗：極端に落ち込みすぎないよう緩和
+                            }
+                        }
+                    }
+                    else if (h.styleName === "先行") {
+                        if (currentLapProgress > 0.20 && currentLapProgress < 0.65) {
                             speed *= 1.08;
-                        } else if (h.nigeMode === "TIRED") {
+                        } else if (currentLapProgress >= 0.65) {
+                            if (ef.senkoOvertaken) {
+                                speed *= 0.94; // 差される（30%）
+                            } else {
+                                speed *= 1.10; // 差し切って1〜2着を争う（70%）
+                            }
+                        }
+                    }
+                    else if (h.styleName === "差し") {
+                        if (currentLapProgress < 0.65) {
+                            speed *= 0.98;
+                        } else {
+                            if (ef.sashiTrigger) {
+                                speed *= 1.22; // 最終コーナーで強力加速
+                            } else {
+                                speed *= 0.93; // 不発でも極端に遅くならないよう補正
+                            }
+                        }
+                    }
+                    else if (h.styleName === "追込") {
+                        if (currentLapProgress < 0.80) {
+                            speed *= 0.92;
+                        } else {
+                            if (ef.oikomiTrigger) {
+                                speed *= 1.35; // 残り200mで爆発的な末脚
+                                if (Math.random() < 0.4) {
+                                    this.particles.push({
+                                        x: h.x + (Math.random() - 0.5) * 8, 
+                                        y: h.y + (Math.random() - 0.5) * 8,
+                                        vx: (Math.random() - 0.5) * 3, 
+                                        vy: (Math.random() - 0.5) * 3,
+                                        color: "#f59e0b", 
+                                        life: 14
+                                    });
+                                }
+                            } else {
+                                speed *= 0.93; // 不発時もスピード維持
+                            }
+                        }
+                    }
+                    else if (h.styleName === "先行") {
+                        if (currentLapProgress > 0.20 && currentLapProgress < 0.65) {
+                            speed *= 1.08;
+                        } else if (currentLapProgress >= 0.65) {
+                            if (ef.senkoOvertaken) {
+                                speed *= 0.88; // 差される（30%）
+                            } else {
+                                speed *= 1.10; // 差し切って1〜2着を争う（70%）
+                            }
+                        }
+                    }
+                    else if (h.styleName === "差し") {
+                        if (currentLapProgress < 0.65) {
+                            speed *= 0.96;
+                        } else {
+                            if (ef.sashiTrigger) {
+                                speed *= 1.22; // 最終コーナーで強力加速
+                            } else {
+                                speed *= 0.85; // 不発で4着以下
+                            }
+                        }
+                    }
+                    else if (h.styleName === "追込") {
+                        if (currentLapProgress < 0.80) {
                             speed *= 0.88;
                         } else {
-                            speed *= 0.97;
+                            if (ef.oikomiTrigger) {
+                                speed *= 1.35; // 残り200mで爆発的な末脚
+                                if (Math.random() < 0.4) {
+                                    this.particles.push({
+                                        x: h.x + (Math.random() - 0.5) * 8, 
+                                        y: h.y + (Math.random() - 0.5) * 8,
+                                        vx: (Math.random() - 0.5) * 3, 
+                                        vy: (Math.random() - 0.5) * 3,
+                                        color: "#f59e0b", 
+                                        life: 14
+                                    });
+                                }
+                            } else {
+                                speed *= 0.90; // 不発
+                            }
                         }
                     }
-                } else if (h.styleName === "先行") {
-                    if (progress > 0.20 && progress < 0.65) speed *= 1.08;
-                    else if (progress >= 0.65) speed *= 1.05;
-                } else if (h.styleName === "差し") {
-                    if (progress < 0.55) {
-                        speed *= 0.98;
-                    } else {
-                        if (h.sashiMode === "SUCCESS") {
-                            speed *= 1.14;
-                        } else if (h.sashiMode === "TOO_LATE") {
-                            speed *= 1.07;
-                        } else {
-                            speed *= 1.01;
+
+                    // 5. デブの終盤加速ボーナス（1600mの最終周で50%で勝率2倍）
+                    if (h.bodyType.key === "fat" && ef.fatBonusTrigger && currentLapProgress >= 0.70) {
+                        speed *= 1.25;
+                    }
+
+                    // 6. ノッポの中盤位置上昇（最終周の中盤 0.35〜0.60 で位置UP）
+                    if (h.bodyType.key === "noppo" && ef.noppoRiseTrigger && currentLapProgress >= 0.35 && currentLapProgress < 0.60) {
+                        speed *= 1.20;
+                    }
+
+                    // 7. チビのゴール前競り合い勝ち（最終周のラスト 0.90以降、デブ相手以外）
+                    if (h.bodyType.key === "chibi" && ef.chibiFightTrigger && currentLapProgress >= 0.90) {
+                        const frontHorse = topHorses.find(other => other !== h && other.progress > h.progress);
+                        if (frontHorse) {
+                            const diff = frontHorse.progress - h.progress;
+                            if (diff <= 0.015 && frontHorse.bodyType.key !== "fat") {
+                                speed *= 1.30; // 逆転勝利スパート
+                            }
                         }
                     }
-                } else if (h.styleName === "追込") {
-                    if (progress < 0.45) {
-                        speed *= 0.90;
-                    } else {
-                        let spurtMult = 1.12;
-                        if (this.raceMode === "BURST") {
-                            spurtMult = 1.25;
-                        } else if (this.raceMode === "NEAR_MISS") {
-                            spurtMult = 1.18;
+
+                    // ------------------ ★ ゲーム性向上：ドラマチック確率補正 ------------------
+                    if (currentLapProgress >= 0.75) {
+                        // ① 大穴（オッズ8.0以上）の一発逆転（下剋上ブースト 25%）
+                        if (h.odds >= 8.0 && Math.random() < 0.25) {
+                            speed *= 1.28;
+                            if (Math.random() < 0.3) {
+                                this.particles.push({
+                                    x: h.x + (Math.random() - 0.5) * 8, 
+                                    y: h.y + (Math.random() - 0.5) * 8,
+                                    vx: (Math.random() - 0.5) * 4, 
+                                    vy: (Math.random() - 0.5) * 4,
+                                    color: "#a855f7", 
+                                    life: 15
+                                });
+                            }
+                        } 
+                        // ② 中穴（オッズ4.0〜8.0）の逆転（15%）
+                        else if (h.odds >= 4.0 && h.odds < 8.0 && Math.random() < 0.15) {
+                            speed *= 1.18;
                         }
 
-                        speed *= (h.spurtPower * spurtMult);
-                        
-                        if (Math.random() < 0.3) {
-                            this.particles.push({
-                                x: h.x + (Math.random() - 0.5) * 8, 
-                                y: h.y + (Math.random() - 0.5) * 8,
-                                vx: (Math.random() - 0.5) * 3, 
-                                vy: (Math.random() - 0.5) * 3,
-                                color: "#f59e0b", 
-                                life: 14
-                            });
+                        // ③ 5位・6位に沈む馬の「追撃ブースト」（40%の確率で混戦・団子状態を演出）
+                        const currentRank = topHorses.indexOf(h);
+                        if (currentRank >= 4 && Math.random() < 0.40) {
+                            speed *= 1.22;
+                        }
+
+                        // ④ 1番人気本命馬（オッズ2.0以下）のポカ（進路塞がり 15%）
+                        if (h.odds <= 2.0 && Math.random() < 0.15) {
+                            speed *= 0.92;
                         }
                     }
-                } else if (h.styleName === "コーナー") {
-                    if ((progress > 0.20 && progress < 0.45) || (progress > 0.68 && progress < 0.90)) {
-                        speed *= 1.22;
+
+                    // ------------------ ★ 集団をまとめる「ダンゴ状態（接戦）」補正 ------------------
+                    const currentRankIndex = topHorses.indexOf(h);
+
+                    // 1. 先頭（1位）が2位と離れすぎている場合、少し減速して集団を引きつける
+                    if (currentRankIndex === 0 && secondPlace) {
+                        const leadGap = h.progress - secondPlace.progress;
+                        if (leadGap > 0.03 * targetProgress) {
+                            speed *= 0.90; // ブッチギリ防止の抑え
+                        }
                     }
-                } else if (h.styleName === "ムラ気") {
-                    const mood = Math.sin(progress * Math.PI * 8);
-                    if (mood > 0.3) speed *= (this.raceMode === "BURST" ? 1.30 : 1.18);
-                    else if (mood < -0.3) speed *= 0.75;
-                }
 
-                if (isSecondBattleClose && progress > 0.75 && (h === secondPlace || h === thirdPlace)) {
-                    speed *= (1.04 + (Math.random() * 0.04));
-                }
+                    // 2. 最下位（びり）や後方馬が大きく離された場合、自動的に追い上げブースト
+                    if (currentRankIndex >= 4) {
+                        const gapToFront = leader.progress - h.progress;
+                        if (gapToFront > 0.05 * targetProgress) {
+                            speed *= 1.20; // びり馬の追い上げ補正
+                        }
+                    }
 
-                if (progress > 0.65 && h !== leader) {
-                    const distanceToLeader = leader.progress - h.progress;
-                    if (distanceToLeader > 0.04) {
-                        let boostRatio = 0.5;
-                        if (this.raceMode === "BURST") boostRatio = 1.0;
-                        else if (this.raceMode === "NEAR_MISS") boostRatio = 0.7;
+                    // ★ ワンツー組み合わせ出現率テーブルに応じた終盤の展開補正 (0.75以降)
+                    if (currentLapProgress >= 0.75 && this.targetCombo && this.targetCombo !== "OTHER") {
+                        const tc = this.targetCombo;
+                        const style = h.styleName;
+                        const isFat = (h.bodyType.key === "fat");
 
-                        speed *= (1.0 + Math.min(0.18, distanceToLeader * boostRatio));
+                        if (tc === "NIGE_SENKO" && (style === "逃げ" || style === "先行")) speed *= 1.12;
+                        else if (tc === "NIGE_SASHI" && (style === "逃げ" || style === "差し")) speed *= 1.12;
+                        else if (tc === "SENKO_SASHI" && (style === "先行" || style === "差し")) speed *= 1.12;
+                        else if (tc === "SASHI_OIKOMI" && (style === "差し" || style === "追込")) speed *= 1.14;
+                        else if (tc === "SASHI_FAT_OIKOMI") {
+                            if (style === "差し" || (style === "追込" && isFat)) speed *= 1.18;
+                        }
                     }
                 }
 
@@ -1570,11 +1780,17 @@
                     if (h.boostTimer === 0) h.isBoosting = false;
                 }
 
-                speed += (Math.random() - 0.5) * 0.0004 * timeScale;
+                // 遅くなりすぎないように最低速度補正（下限ガード）を適用
+                const minAllowedSpeed = 0.0017 * h.baseSpeed * distSpeedFactor * 0.85;
+                if (speed < minAllowedSpeed) {
+                    speed = minAllowedSpeed;
+                }
+
+                speed += (Math.random() - 0.5) * 0.0004 * timeScale * distSpeedFactor;
                 h.progress += speed;
 
-                if (h.progress >= 1.0) {
-                    h.progress = 1.0;
+                if (h.progress >= targetProgress) {
+                    h.progress = targetProgress;
                     if (!this.rankings.includes(h)) {
                         this.rankings.push(h);
                         h.rank = this.rankings.length;
@@ -1983,7 +2199,7 @@
             ctx.fillStyle = '#e2e8f0';
             ctx.font = '900 16px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText("🏇 馬券を選んでタップ！ 🪙", w / 2, 24);
+            ctx.fillText(`🏇 馬券を選んでタップ！ [${this.raceDistance}m戦] 🪙`, w / 2, 24);
 
             const drawPlayerBetCards = (player, startY, isRotated) => {
                 const cardW = Math.min(130, (w - 40) / 3);
