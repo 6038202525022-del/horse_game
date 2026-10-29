@@ -208,6 +208,7 @@
                     <p>・ゲーム内のコインや破産（倒産）システムは演出上のエンターテインメント機能です。</p>
                     <p>・マナーを守り、白熱した2人対戦をお楽しみください！</p>
                     <p>・実在の人物と馬の名前は一切関係ありません</p>
+
                 </div>
 
                 <!-- ステップ1: 1Pの名前とパスワードを入力 -->
@@ -1114,7 +1115,7 @@
                 p2Label.textContent = this.p2.medals + (this.p2.debt > 0 ? ` (借:${this.p2.debt})` : '');
             }
 
-            // ★ 中央帯：馬の直近5戦（優勝・2位）履歴の表示更新（左側から1レース目、2レース目...の順に表示）
+            // ★ 中央帯：馬の直近5戦（優勝・2位）履歴の表示更新
             const renderRaceHistory = (elementId) => {
                 const container = document.getElementById(elementId);
                 if (!container) return;
@@ -1125,21 +1126,20 @@
                 }
 
                 let html = '';
-                // 配列の末尾（最古の記録）から先頭（最新の記録）へ順番にたどることで左から「1レース目、2レース目...」順にする
                 const historyCount = this.raceHistory.length;
                 for (let i = historyCount - 1; i >= 0; i--) {
                     const item = this.raceHistory[i];
-                    const raceNum = historyCount - i; // 通算/直近のレース番号（1, 2, 3, 4, 5）
+                    const raceNum = historyCount - i;
                     html += `
                         <div class="bg-slate-900 border border-amber-500/40 rounded px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap shadow-sm">
                             <span class="text-[9px] text-amber-400 font-bold">${raceNum}レース目</span>
                             <span class="inline-flex items-center gap-0.5 bg-amber-500/20 px-1 rounded text-amber-200">
                                 <span class="w-2 h-2 rounded-full inline-block" style="background-color:${item.firstColor}"></span>
-                                🥇${item.firstId}.${item.firstName.slice(0, 4)}
+                                🥇${item.firstId}.${item.firstName}
                             </span>
                             <span class="inline-flex items-center gap-0.5 bg-slate-800 px-1 rounded text-slate-300">
                                 <span class="w-2 h-2 rounded-full inline-block" style="background-color:${item.secondColor}"></span>
-                                🥈${item.secondId}.${item.secondName.slice(0, 4)}
+                                🥈${item.secondId}.${item.secondName}
                             </span>
                         </div>
                     `;
@@ -1150,53 +1150,55 @@
             renderRaceHistory('center-p1-race-history');
             renderRaceHistory('center-p2-race-history');
 
-            document.getElementById('p1-btn-bet-unit').textContent = `単位: ${this.p1.betAmount === "ALL" ? "ALL" : this.p1.betAmount + "枚"}`;
-            document.getElementById('p2-btn-bet-unit').textContent = `単位: ${this.p2.betAmount === "ALL" ? "ALL" : this.p2.betAmount + "枚"}`;
+            const p1UnitBtn = document.getElementById('p1-btn-bet-unit');
+            const p2UnitBtn = document.getElementById('p2-btn-bet-unit');
+            if (p1UnitBtn) p1UnitBtn.textContent = `単位: ${this.p1.betAmount === "ALL" ? "ALL" : this.p1.betAmount + "枚"}`;
+            if (p2UnitBtn) p2UnitBtn.textContent = `単位: ${this.p2.betAmount === "ALL" ? "ALL" : this.p2.betAmount + "枚"}`;
 
             const renderSummary = (player, containerId) => {
-            const container = document.getElementById(containerId);
-            if (this.state === "RACING") return;
+                const container = document.getElementById(containerId);
+                if (!container || this.state === "RACING") return;
 
-            let html = '';
-            let total = 0;
-            for (let id in player.singleBets) {
-                if (player.singleBets[id] > 0) {
-                    total += player.singleBets[id];
-                    html += `<div class="bet-chip"><span>単勝${id}</span><span class="count">${player.singleBets[id]}</span></div>`;
+                let html = '';
+                let total = 0;
+                for (let id in player.singleBets) {
+                    if (player.singleBets[id] > 0) {
+                        total += player.singleBets[id];
+                        html += `<div class="bet-chip"><span>単勝${id}</span><span class="count">${player.singleBets[id]}</span></div>`;
+                    }
                 }
-            }
-            for (let key in player.exactaBets) {
-                if (player.exactaBets[key] > 0) {
-                    total += player.exactaBets[key];
-                    html += `<div class="bet-chip"><span>馬連${key}</span><span class="count">${player.exactaBets[key]}</span></div>`;
+                for (let key in player.exactaBets) {
+                    if (player.exactaBets[key] > 0) {
+                        total += player.exactaBets[key];
+                        html += `<div class="bet-chip"><span>馬連${key}</span><span class="count">${player.exactaBets[key]}</span></div>`;
+                    }
                 }
-            }
-
-            const pTag = (player.name && player.name.trim() !== "") ? player.name : (player === this.p1 ? "1P" : "2P");
-            container.innerHTML = total > 0 ? html : `<span class="text-slate-400 text-[11px]">${pTag}: 馬を選択してベット</span>`;
-        };
-
-        renderSummary(this.p1, 'p1-bets-summary');
-        renderSummary(this.p2, 'p2-bets-summary');
+                if (total === 0) {
+                    container.innerHTML = `<span class="text-slate-400 text-[10px]">馬を選択してベット</span>`;
+                } else {
+                    container.innerHTML = html;
+                }
+            };
 
             const renderRacingCarrots = (player, containerId) => {
                 const container = document.getElementById(containerId);
-                if (this.state !== "RACING") {
+                if (!container) return;
+                if (this.state === "RACING") {
+                    container.classList.remove('hidden');
+                    let html = '';
+                    player.carrots.forEach((cnt, idx) => {
+                        if (cnt > 0) {
+                            html += `<button onclick="window.game.useCarrot(${player === this.p1 ? 'window.game.p1' : 'window.game.p2'}, ${idx})" class="btn-arcade bg-orange-600 hover:bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded text-[9px]">🥕 ${idx+1}番(${cnt})</button>`;
+                        }
+                    });
+                    container.innerHTML = html;
+                } else {
                     container.classList.add('hidden');
-                    return;
                 }
-                container.classList.remove('hidden');
-                let html = '';
-                this.horses.forEach((h, idx) => {
-                    const count = player.carrots[idx];
-                    html += `<button onclick="window.game.useCarrot(${player === this.p1 ? 'window.game.p1' : 'window.game.p2'}, ${idx})" 
-                                    class="px-2 py-0.5 rounded text-xs font-bold border ${count > 0 ? 'bg-orange-500 border-yellow-300 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}">
-                                ${h.id}番🥕:${count}
-                             </button>`;
-                });
-                container.innerHTML = html;
             };
 
+            renderSummary(this.p1, 'p1-bets-summary');
+            renderSummary(this.p2, 'p2-bets-summary');
             renderRacingCarrots(this.p1, 'p1-racing-carrots');
             renderRacingCarrots(this.p2, 'p2-racing-carrots');
         }
@@ -1894,18 +1896,18 @@
                     ctx.fill();
                     ctx.stroke();
 
-                    // 馬番号・名前
+                    // 馬番号・名前（名前の長さに合わせてフォントサイズを自動調整）
                     ctx.fillStyle = cardHorse.color;
-                    ctx.font = '900 13px sans-serif';
+                    const nameText = `${cardHorse.id}.${cardHorse.name}`;
+                    const fontSize = nameText.length > 8 ? 10 : (nameText.length > 6 ? 11 : 13);
+                    ctx.font = `900 ${fontSize}px sans-serif`;
                     ctx.textAlign = 'left';
-                    ctx.fillText(`${cardHorse.id}.${cardHorse.name.slice(0, 5)}`, x + 8, y + 18);
+                    ctx.fillText(nameText, x + 6, y + 18);
 
                     // 脚質・オッズ
                     ctx.fillStyle = '#94a3b8';
                     ctx.font = '700 10px sans-serif';
-                    ctx.fillText(`[${cardHorse.styleName}]`, x + 8, y + 33);
-
-                    ctx.fillStyle = '#facc15';
+                    ctx.fillText(`[${cardHorse.styleName}]`, x + 6, y + 33);
                     ctx.font = '900 12px sans-serif';
                     ctx.textAlign = 'right';
                     ctx.fillText(`×${cardHorse.odds}`, x + cardW - 8, y + 33);
