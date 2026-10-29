@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模試、がんばれ。</title>
+    <!-- Google Fonts: 凛とした明朝体 "Shippori Mincho" -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffffff;
+            color: #111111;
+            font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+            position: relative;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 幾何学フレーム */
+        .frame-container {
+            position: relative;
+            padding: 60px 80px;
+            border: 1px solid #e2e2e2;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 35px;
+            max-width: 90vw;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.02);
+            text-align: center;
+        }
+
+        /* 四隅のコーナーパーツ */
+        .corner {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-color: #111111;
+            border-style: solid;
+        }
+        .top-left { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .top-right { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+        .bottom-left { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+        .bottom-right { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        /* 明朝タイポグラフィ */
+        h1 {
+            font-size: clamp(2.8rem, 7vw, 5rem);
+            font-weight: 800;
+            letter-spacing: 0.35em;
+            text-indent: 0.35em;
+            text-align: center;
+            white-space: nowrap;
+            user-select: none;
+            color: #0d0d0d;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ボタン */
+        .link-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 28px;
+            font-size: 0.85rem;
+            letter-spacing: 0.18em;
+            color: #444444;
+            background-color: transparent;
+            border: 1px solid #dcdcdc;
+            border-radius: 2px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .link-button:hover {
+            color: #000000;
+            border-color: #111111;
+            background-color: #fcfcfc;
+        }
+
+        /* 注意書きスタイル */
+        .disclaimer {
+            font-size: 0.7rem;
+            color: #888888;
+            line-height: 1.6;
+            letter-spacing: 0.05em;
+            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="frame-container">
+        <!-- コーナーパーツ -->
+        <div class="corner top-left"></div>
+        <div class="corner top-right"></div>
+        <div class="corner bottom-left"></div>
+        <div class="corner bottom-right"></div>
+
+        <!-- タイポグラフィ -->
+        <h1>模試、がんばれ。</h1>
+
+        <!-- リンク移動ボタン -->
+        <a href="https://sites.google.com/d/1pwPRYdhPxmksWY5PxzgSxplW0QDU9e0F/p/1eVbJMquem4xA6pc-uqszagFE4__duS1E/edit" 
+           class="link-button" 
+           target="_blank" 
+           rel="noopener noreferrer">
+            ゲームをする
+        </a>
+
+        <!-- 注意書き -->
+        <p class="disclaimer">
+            作成者は一切の責任を負いません。自己責任で使用ください。<br>
+            バージョンは古いタイプのものです。
+        </p>
+    </div>
+
+</body>
+</html>
