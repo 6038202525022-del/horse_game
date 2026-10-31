@@ -90,6 +90,122 @@
             letter-spacing: 0.2em;
         }
     </style>
+    <style id="theme-soft-modern">
+        /* ===== やさしいモダンテーマ：白×ブラウン×抹茶 ===== */
+        :root{
+            --cream:#f6f1e8; --paper:#fffdf9; --sand:#efe6d8; --line:#e4d8c6;
+            --ink:#4a3b2e; --ink2:#6b5a49; --mute:#8c7a68;
+            --matcha:#7c9a6b; --matcha-d:#5f7f50; --matcha-l:#e6eddc;
+            --terra:#c58a74; --terra-d:#b5694f; --dust:#7f9aa6; --dust-d:#5f8591;
+            --tan:#d9bf9a; --brown:#8a6d4b;
+        }
+        body{ background-color:var(--cream); color:var(--ink); }
+        body canvas{ box-shadow:none; border-radius:12px; }
+
+        /* --- 背景 --- */
+        body .bg-slate-950{ background-color:var(--cream); }
+        body .bg-slate-950\/30{ background-color:rgba(246,241,232,.35); }
+        body .bg-slate-950\/40{ background-color:rgba(255,255,255,.4); }
+        body .bg-slate-950\/60{ background-color:rgba(246,241,232,.75); }
+        body .bg-slate-950\/80{ background-color:rgba(246,241,232,.92); }
+        body .bg-slate-950\/90{ background-color:rgba(255,253,249,.94); }
+        body .bg-slate-950\/95{ background-color:rgba(246,241,232,.95); }
+        body .bg-slate-900{ background-color:var(--paper); }
+        body .bg-slate-900\/95{ background-color:rgba(255,253,249,.97); }
+        body .bg-slate-800{ background-color:var(--sand); }
+        body .hover\:bg-slate-800:hover,
+        body .hover\:bg-slate-700:hover{ background-color:#e6dac7; }
+        body .bg-cyan-950\/30{ background-color:rgba(127,154,166,.12); }
+        body .bg-cyan-950{ background-color:#e6eef1; }
+        body .bg-rose-950{ background-color:#f3e2db; }
+        body .bg-amber-500{ background-color:#e3cfae; }
+        body .bg-amber-500\/20{ background-color:rgba(217,191,154,.3); }
+        body .bg-emerald-600{ background-color:var(--matcha); }
+        body .hover\:bg-emerald-500:hover{ background-color:#8aa87a; }
+        body .bg-blue-600{ background-color:#a08a73; }
+        body .hover\:bg-blue-500:hover{ background-color:#ae987f; }
+        body .bg-rose-600{ background-color:var(--terra); }
+        body .bg-cyan-600{ background-color:var(--dust); }
+
+        /* --- グラデーションボタンはフラットな色に --- */
+        body [class*="bg-gradient-to"]{ background-image:none; background-color:var(--matcha); color:#fff; }
+        body [class*="bg-gradient-to"]:hover{ filter:brightness(1.06); }
+        body .from-amber-600.to-amber-500{ background-color:var(--tan); color:var(--ink); }
+        body .from-orange-600.to-orange-500{ background-color:#d9a77f; color:var(--ink); }
+        body .from-red-600.to-red-500{ background-color:#c98a78; color:#fff; }
+        body .from-orange-500.to-amber-500{ background-color:#f0c08a; color:var(--ink); }
+        body #custom-choice-panel button:last-child{ background-color:var(--tan); color:var(--ink); }
+
+        /* --- 文字色 --- */
+        body .text-white{ color:#fff; }
+        body .hover\:text-white:hover{ color:var(--ink); }
+        body .text-slate-300{ color:var(--ink2); }
+        body .text-slate-400{ color:var(--mute); }
+        body .text-slate-500{ color:#a8977f; }
+        body .text-slate-900{ color:var(--ink); }
+        body .text-slate-950{ color:#fff; }
+        body .text-amber-200,
+        body .text-amber-300,
+        body .text-amber-400{ color:var(--brown); }
+        body .text-yellow-400{ color:#b8893b; }
+        body .text-emerald-200,
+        body .text-emerald-300,
+        body .text-emerald-400{ color:var(--matcha-d); }
+        body .text-cyan-300,
+        body .text-cyan-400{ color:var(--dust-d); }
+        body .text-rose-300,
+        body .text-rose-400{ color:var(--terra-d); }
+        body .text-red-400,
+        body .text-red-500{ color:var(--terra-d); }
+        body .text-red-200,
+        body .text-orange-200{ color:var(--ink); }
+
+        /* --- 枠線 --- */
+        body .border-slate-600,
+        body .border-slate-700,
+        body .border-slate-800{ border-color:var(--line); }
+        body .border-amber-400,
+        body .border-amber-500,
+        body .border-amber-500\/40,
+        body .border-amber-500\/80{ border-color:#dccbb0; }
+        body .border-amber-800{ border-color:rgba(120,95,70,.25); }
+        body .border-cyan-500,
+        body .border-cyan-500\/20,
+        body .border-cyan-500\/50,
+        body .border-cyan-800,
+        body .border-cyan-800\/60,
+        body .border-cyan-900{ border-color:#c3d3d8; }
+        body .border-emerald-500{ border-color:#b9cdaa; }
+        body .border-emerald-800{ border-color:rgba(95,127,80,.4); }
+        body .border-orange-700{ border-color:rgba(150,110,70,.35); }
+        body .border-red-500{ border-color:#dfaa9b; }
+        body .border-rose-500\/50,
+        body .border-rose-800,
+        body .border-rose-900{ border-color:#e6c8bc; }
+        body input:focus, body select:focus{ border-color:var(--matcha); box-shadow:0 0 0 3px rgba(124,154,107,.18); outline:none; }
+        body input, body select{ color:var(--ink) !important; background-color:var(--paper) !important; }
+        body input::placeholder{ color:#b3a48e; }
+
+        /* --- 影・ボタン --- */
+        body .shadow-2xl,
+        body .shadow-xl,
+        body .shadow-lg,
+        body .shadow-md,
+        body .shadow{ box-shadow:0 8px 24px rgba(120,95,70,.12); }
+        body .btn-arcade{ box-shadow:0 3px 0 0 rgba(120,95,70,.22); }
+        body .btn-arcade:active{ box-shadow:0 0 0 0 rgba(120,95,70,.22); }
+        body .btn-arcade.bg-slate-800{ box-shadow:0 2px 0 0 rgba(120,95,70,.12); }
+
+        /* --- 個別パーツ --- */
+        body .bet-chip{ background:var(--paper); border:1.5px solid #cdbb9f; color:var(--ink); }
+        body .bet-chip .count{ background:var(--matcha); color:#fff; }
+        body .stamp-effect{ color:var(--terra-d); border-color:var(--terra-d); text-shadow:none; background:rgba(255,253,249,.92);
+            box-shadow:inset 0 0 12px rgba(181,105,79,.15), 0 4px 16px rgba(181,105,79,.18); }
+        body #countdown-text{ color:var(--brown); filter:drop-shadow(0 6px 10px rgba(120,95,70,.35)); }
+        body #commentary-banner{ box-shadow:0 4px 16px rgba(120,95,70,.15); }
+        body header, body footer{ box-shadow:0 2px 10px rgba(120,95,70,.08); }
+    </style>
+
     <script>
         window.generateHorseTexture = async () => null;
         const _key = p => 'horse_save_' + String(p || '000000');
@@ -168,7 +284,7 @@
                 <form id="login-form" onsubmit="window.game.submitLogin(event)" class="flex flex-col gap-3 text-left">
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">1P プレイヤー名</label>
-                        <input type="text" id="input-username" required placeholder="例: ブロッコリーマヨネーズ" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                      <input type="text" id="input-username" required placeholder="例: ブロッコリーマヨネーズ" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg px-3 py-2 text-xs font-bold outline-none">
                     </div>
 
                     <!-- 【新規用】パスワード設定 -->
@@ -225,7 +341,7 @@
                 <form id="p2-name-form" onsubmit="window.game.submit2PName(event)" class="flex flex-col gap-3 text-left">
                     <div>
                         <label class="block text-xs font-bold text-cyan-300 mb-1">2P プレイヤー名</label>
-                        <input type="text" id="input-p2-username" placeholder="例: アスパラガス (空欄でスキップ可能)" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                        <input type="text" id="input-p2-username" placeholder="例: アスパラガス (空欄でスキップ可能)" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-lg px-3 py-2 text-xs font-bold outline-none">
                     </div>
 
                     <div id="p2-name-error" class="hidden text-red-400 text-xs font-bold text-center"></div>
@@ -2225,19 +2341,19 @@
                 ctx.arc(cx, cy, Math.max(w, h), a1, a2);
                 ctx.closePath();
                 // 緑(#16a34a) と 黄緑(#84cc16) のストライプ
-                ctx.fillStyle = (i % 2 === 0) ? '#16a34a' : '#84cc16';
+                ctx.fillStyle = (i % 2 === 0) ? '#7fa66b' : '#a6c488';
                 ctx.fill();
             }
 
             // 3. レーン（1〜6番）ごとに異なる半透明の色を重ねて、各レーンの色を変える
             const laneSpacing = 11;
             const laneColors = [
-                'rgba(132, 204, 22, 0.45)', // 1レーン: 黄緑 (#84cc16)
-                'rgba(22, 163, 74, 0.45)',  // 2レーン: 緑 (#16a34a)
-                'rgba(132, 204, 22, 0.45)', // 3レーン: 黄緑 (#84cc16)
-                'rgba(22, 163, 74, 0.45)',  // 4レーン: 緑 (#16a34a)
-                'rgba(132, 204, 22, 0.45)', // 5レーン: 黄緑 (#84cc16)
-                'rgba(22, 163, 74, 0.45)'   // 6レーン: 緑 (#16a34a)
+                'rgba(166, 196, 136, 0.45)', // 1レーン: 黄緑 (#84cc16)
+                'rgba(127, 166, 107, 0.45)',  // 2レーン: 緑 (#16a34a)
+                'rgba(166, 196, 136, 0.45)', // 3レーン: 黄緑 (#84cc16)
+                'rgba(127, 166, 107, 0.45)',  // 4レーン: 緑 (#16a34a)
+                'rgba(166, 196, 136, 0.45)', // 5レーン: 黄緑 (#84cc16)
+                'rgba(127, 166, 107, 0.45)'   // 6レーン: 緑 (#16a34a)
             ];
 
             for (let lane = 0; lane < 6; lane++) {
@@ -2549,7 +2665,7 @@
                     ctx.font = `900 ${fs}px sans-serif`;
                 }
                 ctx.lineWidth = Math.max(2, fs * 0.28);
-                ctx.strokeStyle = 'rgba(15,23,42,0.9)';
+                ctx.strokeStyle = 'rgba(74,59,46,0.85)';
                 ctx.strokeText(label, cx, y);
                 ctx.fillStyle = hs.color;
                 ctx.fillText(label, cx, y);
@@ -2562,10 +2678,10 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-            ctx.fillStyle = '#0f172a';
+            ctx.fillStyle = '#f6f1e8';
             ctx.fillRect(0, 0, w, h);
 
-            ctx.fillStyle = '#e2e8f0';
+            ctx.fillStyle = '#6b5a49';
             ctx.font = '900 16px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(`🏇 馬券を選んでタップ！ [${this.raceDistance}m戦] 🪙`, w / 2, 24);
@@ -2606,8 +2722,8 @@
 
                     // カードの背景枠・カラーグラデーション描画
                     const isSelected = player.exactaSel === displayIdx;
-                    ctx.fillStyle = isSelected ? 'rgba(234, 179, 8, 0.35)' : 'rgba(15, 23, 42, 0.95)';
-                    ctx.strokeStyle = isSelected ? '#eab308' : frameObj.color;
+                    ctx.fillStyle = isSelected ? 'rgba(124, 154, 107, 0.22)' : '#fffdf9';
+                    ctx.strokeStyle = isSelected ? '#7c9a6b' : frameObj.color;
                     ctx.lineWidth = isSelected ? 3.5 : 2.5;
 
                     ctx.beginPath();
@@ -2622,14 +2738,14 @@
                     ctx.fill();
 
                     // バッジ内の数字
-                    ctx.fillStyle = '#0f172a';
+                    ctx.fillStyle = '#3d2f24';
                     ctx.font = '900 11px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(cardHorse.id, x + 13, y + 12);
 
                     // 馬名表示（指定色カラー付き）
-                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = '#4a3b2e';
                     const nameText = cardHorse.name;
                     const fontSize = nameText.length > 8 ? 9 : (nameText.length > 6 ? 10 : 12);
                     ctx.font = `900 ${fontSize}px sans-serif`;
@@ -2638,11 +2754,11 @@
                     ctx.fillText(nameText, x + 26, y + 16);
 
                     // 体形・脚質・オッズ
-                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillStyle = '#8c7a68';
                     ctx.font = '700 9px sans-serif';
                     ctx.fillText(`[${cardHorse.bodyType.name}/${cardHorse.styleName}]`, x + 6, y + 33);
 
-                    ctx.fillStyle = frameObj.color;
+                    ctx.fillStyle = '#8a6d4b';
                     ctx.font = '900 12px sans-serif';
                     ctx.textAlign = 'right';
                     ctx.fillText(`×${cardHorse.odds}`, x + cardW - 6, y + 33);
@@ -2656,7 +2772,7 @@
                         }
                     }
 
-                    ctx.fillStyle = '#f8fafc';
+                    ctx.fillStyle = '#5b4a3c';
                     ctx.font = '700 10px sans-serif';
                     ctx.textAlign = 'left';
                     ctx.fillText(`単勝: ${singleBet}枚`, x + 6, y + 50);
@@ -2678,10 +2794,10 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            ctx.fillStyle = 'rgba(250, 246, 238, 0.94)';
             ctx.fillRect(0, 0, w, h);
 
-            ctx.fillStyle = '#facc15';
+            ctx.fillStyle = '#8a6d4b';
             ctx.font = '900 22px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText("🏆 レース結果 🏆", w / 2, h / 2 - 90);
@@ -2695,16 +2811,20 @@
 
                 ranks.forEach((item, idx) => {
                     const y = h / 2 - 40 + idx * 30;
-                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = '#5b4a3c';
                     ctx.font = '700 14px sans-serif';
                     ctx.textAlign = 'left';
                     ctx.fillText(`${item.label}:`, w / 2 - 140, y);
 
-                    ctx.fillStyle = item.horse.color;
                     ctx.font = '900 16px sans-serif';
+                    ctx.lineJoin = 'round';
+                    ctx.lineWidth = 3.5;
+                    ctx.strokeStyle = 'rgba(74,59,46,0.85)';
+                    ctx.strokeText(`${item.horse.id}番 ${item.horse.name}`, w / 2 - 70, y);
+                    ctx.fillStyle = item.horse.color;
                     ctx.fillText(`${item.horse.id}番 ${item.horse.name}`, w / 2 - 70, y);
 
-                    ctx.fillStyle = '#facc15';
+                    ctx.fillStyle = '#a8845a';
                     ctx.font = '700 12px sans-serif';
                     ctx.textAlign = 'right';
                     ctx.fillText(`(オッズ ×${item.horse.odds})`, w / 2 + 150, y);
@@ -2718,13 +2838,13 @@
             ctx.font = '900 13px sans-serif';
             ctx.textAlign = 'center';
             
-            ctx.fillStyle = '#f43f5e';
+            ctx.fillStyle = '#b5694f';
             ctx.fillText(`${p1Name}: +${this.p1WonMedalsThisRace}枚 獲得！`, w / 2, h / 2 + 65);
 
-            ctx.fillStyle = '#38bdf8';
+            ctx.fillStyle = '#5f8591';
             ctx.fillText(`${p2Name}: +${this.p2WonMedalsThisRace}枚 獲得！`, w / 2, h / 2 + 85);
 
-            ctx.fillStyle = '#94a3b8';
+            ctx.fillStyle = '#8c7a68';
             ctx.font = '700 12px sans-serif';
             ctx.fillText((this.isCustomHorseMode && this.customHorseData) ? "下のボタンで6番馬をどうするか選んでね" : "画面をタップして次のレースへ", w / 2, h / 2 + 125);
         }
