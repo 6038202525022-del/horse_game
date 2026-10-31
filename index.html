@@ -99,11 +99,11 @@
             --terra:#c58a74; --terra-d:#b5694f; --dust:#7f9aa6; --dust-d:#5f8591;
             --tan:#d9bf9a; --brown:#8a6d4b;
         }
-        body{ background-color:var(--cream); color:var(--ink); }
+        body{ background-color:var(--cream) !important; color:var(--ink); }
         body canvas{ box-shadow:none; border-radius:12px; }
 
         /* --- 背景 --- */
-        body .bg-slate-950{ background-color:var(--cream); }
+        body .bg-slate-950{ background-color:var(--cream) !important; }
         body .bg-slate-950\/30{ background-color:rgba(246,241,232,.35); }
         body .bg-slate-950\/40{ background-color:rgba(255,255,255,.4); }
         body .bg-slate-950\/60{ background-color:rgba(246,241,232,.75); }
@@ -253,7 +253,7 @@
     </header>
 
     <!-- Center Canvas Area -->
-    <main class="w-full max-w-5xl mx-auto flex-1 my-0.5 relative bg-slate-900 rounded-xl overflow-hidden border-2 border-slate-700 flex flex-col">
+<main class="w-full max-w-5xl mx-auto flex-1 my-0.5 relative bg-slate-900 rounded-xl overflow-hidden border-2 border-amber-500/30 flex flex-col">
         <!-- Live Commentary Display Overlay -->
         <div id="commentary-banner" class="hidden absolute top-1 left-1/2 -translate-x-1/2 z-20 bg-slate-950/90 border border-amber-400 text-amber-300 px-3 py-0.5 rounded-full shadow-lg font-black text-xs md:text-sm flex items-center gap-1.5 backdrop-blur-sm pointer-events-none">
             <span class="animate-pulse text-red-500 text-xs">🎙️</span>
